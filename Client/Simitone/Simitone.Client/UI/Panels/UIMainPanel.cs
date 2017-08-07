@@ -1,0 +1,288 @@
+﻿using FSO.Client;
+using FSO.Client.UI.Framework;
+using FSO.Common.Utils;
+using FSO.Content;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Simitone.Client.UI.Controls;
+using Simitone.Client.UI.Model;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using FSO.Common.Rendering.Framework.Model;
+using Simitone.Client.UI.Panels.LiveSubpanels;
+using Simitone.Client.UI.Screens;
+using FSO.Client.UI.Controls;
+
+namespace Simitone.Client.UI.Panels
+{
+    public class UIMainPanel : UIContainer
+    {
+        private float _CurWidth;
+        public float CurWidth
+        {
+            get
+            {
+                return _CurWidth;
+            }
+            set
+            {
+                _CurWidth = value;
+                UpdateWidth();
+            }
+        }
+
+        private Texture2D Div;
+        private Texture2D WhitePx;
+        private Rectangle DivRect;
+        private UIDiagonalStripe Diag;
+        public UISubpanel SubPanel;
+        public TS1GameScreen Game;
+
+        public UIStencilButton FloorUpBtn;
+        public UIStencilButton FloorDownBtn;
+        public UILabel FloorLabel;
+        public UILabel FloorLabelShadow;
+        public UICategorySwitcher Switcher;
+        public UIImage Divider;
+        public UIStencilButton HideButton;
+        public bool ShowingSelect;
+
+        public UISwitchAvatarPanel SwitchAvatar;
+        public bool PanelActive;
+
+        public string[] FloorNames = new string[]
+        {
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th"
+        };
+        public int LastFloor = -1;
+
+        private List<UICategory> LiveCategories = new List<UICategory>()
+        {
+            new UICategory() { ID = 0, IconName = "live_motives.png" },
+            new UICategory() { ID = 1, IconName = "live_job.png" },
+            new UICategory() { ID = 2, IconName = "live_personality.png" },
+            new UICategory() { ID = 3, IconName = "live_relationships.png" },
+            new UICategory() { ID = 4, IconName = "live_inventory.png" }
+        };
+
+        public UIMainPanel(TS1GameScreen game) : base()
+        {
+            Game = game;
+            Diag = new UIDiagonalStripe(new Point(0, 128), UIDiagonalStripeSide.RIGHT, UIStyle.Current.Bg);
+            Add(Diag);
+            WhitePx = TextureGenerator.GetPxWhite(GameFacade.GraphicsDevice);
+            var ui = Content.Get().CustomUI;
+            Div = ui.Get("panel_div.png").Get(GameFacade.GraphicsDevice);
+
+            FloorUpBtn = new UIStencilButton(ui.Get("level_up.png").Get(GameFacade.GraphicsDevice));
+            FloorUpBtn.Position = new Vector2(80, 10);
+            FloorUpBtn.OnButtonClick += (b) => { if (Game.Level < 5) Game.Level++; };
+            Add(FloorUpBtn);
+
+            FloorDownBtn = new UIStencilButton(ui.Get("level_down.png").Get(GameFacade.GraphicsDevice));
+            FloorDownBtn.Position = new Vector2(80, 68);
+            FloorDownBtn.OnButtonClick += (b) => { if (Game.Level > 1) Game.Level--; };
+            Add(FloorDownBtn);
+
+            FloorLabel = new UILabel();
+            FloorLabel.CaptionStyle = FloorLabel.CaptionStyle.Clone();
+            FloorLabel.CaptionStyle.Size = 15;
+            FloorLabel.CaptionStyle.Color = UIStyle.Current.Text;
+            FloorLabel.Alignment = TextAlignment.Middle | TextAlignment.Center;
+            FloorLabel.Position = new Vector2(80, 64);
+            FloorLabel.Size = new Vector2(51, 18);
+
+            FloorLabelShadow = new UILabel();
+            FloorLabelShadow.CaptionStyle = FloorLabel.CaptionStyle.Clone();
+            FloorLabelShadow.Alignment = TextAlignment.Middle | TextAlignment.Center;
+            FloorLabelShadow.Position = new Vector2(83, 67);
+            FloorLabelShadow.Size = new Vector2(51, 18);
+            FloorLabelShadow.CaptionStyle.Color = Color.Black * 0.5f;
+            Add(FloorLabelShadow);
+            Add(FloorLabel);
+
+            HideButton = new UIStencilButton(ui.Get("panel_hide.png").Get(GameFacade.GraphicsDevice));
+            HideButton.X = Game.ScreenWidth - (50 + 64 + 15);
+            HideButton.Y = 26;
+            HideButton.OnButtonClick += (b) => { Close(); };
+            Add(HideButton);
+
+            Divider = new UIImage(ui.Get("divider.png").Get(GameFacade.GraphicsDevice));
+            Divider.Position = new Vector2(146, 29);
+            Add(Divider);
+
+            Switcher = new UICategorySwitcher();
+            Switcher.Position = new Vector2(164, 0);
+            Switcher.InitCategories(LiveCategories);
+            Switcher.OnCategorySelect += Switcher_OnCategorySelect;
+            Add(Switcher);
+            
+            foreach (var fade in GetFadeables())
+            {
+                fade.Opacity = 0;
+            }
+
+            CurWidth = 0;
+        }
+
+         public void Switcher_OnCategorySelect(int obj)
+        {
+            UISubpanel panel = null;
+            switch (obj)
+            {
+                case 0:
+                    panel = new UIMotiveSubpanel(Game); break;
+                case 1:
+                    panel = new UIJobSubpanel(Game); break;
+                case 2:
+                    panel = new UIPersonalitySubpanel(Game); break;
+                case 3:
+                    panel = new UIRelationshipSubpanel(Game); break;
+                case 4:
+                    panel = new UIInventorySubpanel(Game); break;
+            }
+            SetSubpanel(panel);
+        }
+
+        public void SetSubpanel(UISubpanel sub)
+        {
+            if (SubPanel != null)
+            {
+                SubPanel.Kill();
+            }
+            SubPanel = sub;
+            if (sub != null)
+            {
+                SubPanel.Position = new Vector2(263, 0);
+                Add(SubPanel);
+            }
+        }
+
+        private void UpdateWidth()
+        {
+            //prepanel width is 167
+            //div width is 52
+
+            var iWidth = (int)CurWidth;
+            if (iWidth < 211)
+            {
+                Diag.X = 0;
+                Diag.BodySize = new Point(iWidth, 128);
+                DivRect = new Rectangle();
+            } else if (iWidth < 211+52)
+            {
+                Diag.X = iWidth;
+                Diag.BodySize = new Point(0, 128);
+                DivRect = new Rectangle(0, 0, iWidth - 211, 128);
+            } else
+            {
+                Diag.X = 211 + 52;
+                Diag.BodySize = new Point(iWidth - (211 + 52), 128);
+                DivRect = new Rectangle(0, 0, 52, 128);
+            }
+        }
+
+        public UIElement[] GetFadeables()
+        {
+            return new UIElement[]
+            {
+                FloorUpBtn,
+                FloorDownBtn,
+                FloorLabel,
+                FloorLabelShadow,
+                Switcher.MainButton,
+                Divider,
+                HideButton
+            };
+        }
+
+        public override void Draw(UISpriteBatch batch)
+        {
+            if (CurWidth > 211)
+            {
+                if (ShowingSelect)
+                {
+                    DrawLocalTexture(batch, WhitePx, null, new Vector2(0, 0), new Vector2(211+52, 128), UIStyle.Current.Bg);
+                }
+                else
+                {
+                    DrawLocalTexture(batch, WhitePx, null, new Vector2(0, 0), new Vector2(211, 128), UIStyle.Current.Bg);
+                    DrawLocalTexture(batch, Div, DivRect, new Vector2(211, 0), Vector2.One, UIStyle.Current.Bg);
+                }
+            }
+            base.Draw(batch);
+
+        }
+
+        public override void Update(UpdateState state)
+        {
+            base.Update(state);
+            Visible = _CurWidth > 0;
+
+            if (Game.Level != LastFloor)
+            {
+                LastFloor = Game.Level;
+                FloorLabel.Caption = FloorNames[LastFloor - 1];
+                FloorLabelShadow.Caption = FloorNames[LastFloor - 1];
+                FloorDownBtn.Disabled = LastFloor == 1;
+                FloorUpBtn.Disabled = LastFloor == 5;
+            }
+        }
+
+        public void Open()
+        {
+            Visible = true;
+            GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "CurWidth", GameFacade.Screens.CurrentUIScreen.ScreenWidth-(64+15)} }, TweenQuad.EaseOut);
+            foreach (var fade in GetFadeables())
+            {
+                GameFacade.Screens.Tween.To(fade, 0.3f, new Dictionary<string, float>() { { "Opacity", 1f } });
+            }
+            PanelActive = true;
+        }
+
+        public void Close()
+        {
+            GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "CurWidth", 0 } }, TweenQuad.EaseOut);
+            SetSubpanel(null);
+            foreach (var fade in GetFadeables())
+            {
+                GameFacade.Screens.Tween.To(fade, 0.3f, new Dictionary<string, float>() { { "Opacity", 0f } });
+            }
+            if (Switcher.CategoryExpand > 0) Switcher.Close();
+
+            SwitchAvatar?.Kill();
+            SwitchAvatar = null;
+            PanelActive = false;
+        }
+
+        public void ShowSelect()
+        {
+            var add = new UISwitchAvatarPanel(Game);
+            Add(add);
+
+            SetSubpanel(null);
+            foreach (var fade in GetFadeables())
+            {
+                GameFacade.Screens.Tween.To(fade, 0.3f, new Dictionary<string, float>() { { "Opacity", 0f } });
+            }
+            if (Switcher.CategoryExpand > 0) Switcher.Close();
+            ShowingSelect = true;
+            SwitchAvatar = add;
+
+            add.OnEnd += () =>
+            {
+                Open();
+                Switcher_OnCategorySelect(Switcher.ActiveCategory);
+                SwitchAvatar = null;
+                ShowingSelect = false;
+            };
+        }
+    }
+}
