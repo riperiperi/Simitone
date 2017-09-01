@@ -284,5 +284,12 @@ namespace Simitone.Client.UI.Panels
                 ShowingSelect = false;
             };
         }
+
+        public override void GameResized()
+        {
+            base.GameResized();
+            if (PanelActive) CurWidth = Game.ScreenWidth - (64 + 15);
+            HideButton.X = Game.ScreenWidth - (50 + 64 + 15);
+        }
     }
 }

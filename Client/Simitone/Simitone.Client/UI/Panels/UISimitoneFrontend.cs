@@ -61,7 +61,7 @@ namespace Simitone.Client.UI.Panels
             btn.OnButtonClick += LiveButtonClicked;
             Add(btn);
             LiveButton = btn;
-
+            
             ExtendPanelBtn.Position = new Vector2(btn.X + 54, btn.Y - 50);
 
             MainPanel.X = 64 + 15;
@@ -153,6 +153,12 @@ namespace Simitone.Client.UI.Panels
             if (CutPanel != null) CutPanel.X = CutBtn.X - 39;
             Clock.X = Game.ScreenWidth - (334 + 15);
             Clock.Y = 15;
+
+            Money.Position = new Vector2(15, Game.ScreenHeight - 172);
+            var btn = LiveButton;
+            btn.Position = new Vector2(64 + 15, Game.ScreenHeight - (64 + 15));
+            ExtendPanelBtn.Position = new Vector2(btn.X + 54, btn.Y - 50);
+            MainPanel.Y = btn.Y - 64;
         }
     }
 }

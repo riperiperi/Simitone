@@ -31,6 +31,7 @@ using FSO.Client;
 using FSO.Content;
 using FSO.Client.Debug;
 using Simitone.Client.UI.Screens;
+using FSO.LotView.RC;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -593,24 +594,34 @@ namespace Simitone.Client.UI.Panels
             if (!vm.Ready || vm.Context.Architecture == null) return;
 
             //handling smooth scaled zoom
-            float BaseScale;
-            WorldZoom targetZoom;
-            if (TargetZoom < 0.5f)
+            if (FSOEnvironment.Enable3D)
             {
-                targetZoom = WorldZoom.Far;
-                BaseScale = 0.25f;
-            } else if (TargetZoom < 1f)
-            {
-                targetZoom = WorldZoom.Medium;
-                BaseScale = 0.5f;
-            } else
-            {
-                targetZoom = WorldZoom.Near;
-                BaseScale = 1f;
+                var s3d = ((WorldStateRC)World.State);
+                s3d.Zoom3D += ((9.75f - (TargetZoom-0.25f)*10) - s3d.Zoom3D) / 10;
             }
-            World.BackbufferScale = TargetZoom/BaseScale;
-            if (World.State.Zoom != targetZoom) World.State.Zoom = targetZoom;
-            WorldConfig.Current.SmoothZoom = false;
+            else
+            {
+                float BaseScale;
+                WorldZoom targetZoom;
+                if (TargetZoom < 0.5f)
+                {
+                    targetZoom = WorldZoom.Far;
+                    BaseScale = 0.25f;
+                }
+                else if (TargetZoom < 1f)
+                {
+                    targetZoom = WorldZoom.Medium;
+                    BaseScale = 0.5f;
+                }
+                else
+                {
+                    targetZoom = WorldZoom.Near;
+                    BaseScale = 1f;
+                }
+                World.BackbufferScale = TargetZoom / BaseScale;
+                if (World.State.Zoom != targetZoom) World.State.Zoom = targetZoom;
+                WorldConfig.Current.SmoothZoom = false;
+            }
 
             //Cheats.Update(state);
             //AvatarDS.Update();
@@ -770,8 +781,8 @@ namespace Simitone.Client.UI.Panels
                         if (RMBScroll || !MouseIsOn) return;
                         finalRooms = new HashSet<uint>(CutRooms);
                         var newCut = new Rectangle((int)(mouseTilePos.X - 2.5), (int)(mouseTilePos.Y - 2.5), 5, 5);
-                        newCut.X -= VMArchitectureTools.CutCheckDir[(int)World.State.Rotation][0] * 2;
-                        newCut.Y -= VMArchitectureTools.CutCheckDir[(int)World.State.Rotation][1] * 2;
+                        newCut.X -= VMArchitectureTools.CutCheckDir[(int)World.State.CutRotation][0] * 2;
+                        newCut.Y -= VMArchitectureTools.CutCheckDir[(int)World.State.CutRotation][1] * 2;
                         if (newCut != MouseCutRect)
                         {
                             MouseCutRect = newCut;
@@ -779,12 +790,12 @@ namespace Simitone.Client.UI.Panels
                         }
                     }
 
-                    if (LastFloor != World.State.Level || LastRotation != World.State.Rotation || !finalRooms.SetEquals(LastCutRooms))
+                    if (LastFloor != World.State.Level || LastRotation != World.State.CutRotation || !finalRooms.SetEquals(LastCutRooms))
                     {
-                        LastCuts = VMArchitectureTools.GenerateRoomCut(vm.Context.Architecture, World.State.Level, World.State.Rotation, finalRooms);
+                        LastCuts = VMArchitectureTools.GenerateRoomCut(vm.Context.Architecture, World.State.Level, World.State.CutRotation, finalRooms);
                         recut = 2;
                         LastFloor = World.State.Level;
-                        LastRotation = World.State.Rotation;
+                        LastRotation = World.State.CutRotation;
                     }
                     LastCutRooms = finalRooms;
 

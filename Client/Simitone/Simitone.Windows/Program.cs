@@ -48,6 +48,9 @@ namespace Simitone.Windows
                             case "ide":
                                 ide = true;
                                 break;
+                            case "3d":
+                                FSOEnvironment.Enable3D = true;
+                                break;
                         }
                     }
                 }
@@ -72,6 +75,7 @@ namespace Simitone.Windows
                 GlobalSettings.Default.TS1HybridEnable = true;
                 GlobalSettings.Default.TS1HybridPath = gameLocator.FindTheSims1();
                 GlobalSettings.Default.ClientVersion = "0";
+                GlobalSettings.Default.AntiAlias = true;
 
                 GameFacade.DirectX = useDX;
                 World.DirectX = useDX;

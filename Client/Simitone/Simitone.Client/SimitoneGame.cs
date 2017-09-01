@@ -99,7 +99,8 @@ namespace Simitone.Client
             {
                 AdvancedLighting = settings.Lighting,
                 SmoothZoom = settings.SmoothZoom,
-                SurroundingLots = settings.SurroundingLotMode
+                SurroundingLots = settings.SurroundingLotMode,
+                AA = settings.AntiAlias
             };
 
             OperatingSystem os = Environment.OSVersion;

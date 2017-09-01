@@ -11,6 +11,8 @@ using FSO.Common;
 using FSO.HIT;
 using FSO.Client.UI.Model;
 using Simitone.Client.UI.Screens;
+using FSO.LotView.RC;
+using FSO.Common.Utils;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -32,6 +34,8 @@ namespace Simitone.Client.UI.Panels
         private Vector2 BaseVector;
         private float StartScale;
         private float RotateAngle;
+        //for 3D rotate
+        private float? LastAngleX;
 
         private UIRotationAnimation RotationAnim;
 
@@ -52,6 +56,7 @@ namespace Simitone.Client.UI.Panels
         private int ZoomFreezeTime;
         public override void Update(UpdateState state)
         {
+            var _3d = FSOEnvironment.Enable3D;
             base.Update(state);
             bool rotated = false;
 
@@ -66,7 +71,7 @@ namespace Simitone.Client.UI.Panels
                 if (state.WindowFocused && state.MouseState.ScrollWheelValue != LastMouseWheel)
                 {
                     var diff = state.MouseState.ScrollWheelValue - LastMouseWheel;
-                    Master.TargetZoom = Master.TargetZoom + diff / 1000f;
+                    Master.TargetZoom = Master.TargetZoom + diff / 1600f;
                     LastMouseWheel = state.MouseState.ScrollWheelValue;
                     Master.TargetZoom = Math.Max(0.25f, Math.Min(Master.TargetZoom, 2));
                     ZoomFreezeTime = 10;
@@ -113,6 +118,7 @@ namespace Simitone.Client.UI.Panels
                         var m2 = state.MouseStates.FirstOrDefault(x => x.ID == MiceDown.ElementAt(1));
                         BaseVector = (new Point(m2.MouseState.X, m2.MouseState.Y) - new Point(m1.MouseState.X, m1.MouseState.Y)).ToVector2();
                         StartScale = Master.TargetZoom;
+                        if (_3d) LastAngleX = null;
 
                         //scroll anchor should change to center of two touches without drastically changing scroll
                         TapPoint = (new Point(m2.MouseState.X / 2, m2.MouseState.Y / 2) + new Point(m1.MouseState.X / 2, m1.MouseState.Y / 2));
@@ -124,8 +130,14 @@ namespace Simitone.Client.UI.Panels
                         if (Mode == 0)
                         {
                             ScrollVelocity = new Vector2();
-                            if (transitionTo == -1) Mode = -1;
-                            else {
+                            if (transitionTo == -1)
+                            {
+                                Mode = -1;
+                                var screenMiddle = new Point(GameFacade.Screens.CurrentUIScreen.ScreenWidth / 2, GameFacade.Screens.CurrentUIScreen.ScreenHeight / 2);
+                                Master.ShowPieMenu(((TapPoint - screenMiddle).ToVector2() / Master.World.BackbufferScale).ToPoint() + screenMiddle, state);
+                            }
+                            else
+                            {
                                 var mouse = state.MouseStates.FirstOrDefault(x => x.ID == MiceDown.First());
                                 if ((TapPoint - new Point(mouse.MouseState.X, mouse.MouseState.Y)).ToVector2().Length() > TAP_POINT_DIST)
                                 {
@@ -185,18 +197,24 @@ namespace Simitone.Client.UI.Panels
                         var a = BaseVector;
                         var b = vector;
                         a.Normalize(); b.Normalize();
-                        var clockwise = ((-a.Y)*b.X + a.X*b.Y) > 0;
+                        var clockwise = ((-a.Y) * b.X + a.X * b.Y) > 0;
                         var angle = (float)Math.Acos(Vector2.Dot(a, b));
                         RotateAngle = (clockwise) ? angle : -angle;
 
-                        if (Math.Abs(RotateAngle) > Math.PI / 8) Master.TargetZoom = StartScale;
+                        if (_3d)
+                        {
+                            if (LastAngleX != null) ((WorldStateRC)Master.World.State).RotationX -= (float)DirectionUtils.Difference(RotateAngle, LastAngleX.Value);
+                            LastAngleX = RotateAngle;
+                        } else { 
+                            if (Math.Abs(RotateAngle) > Math.PI / 8) Master.TargetZoom = StartScale;
+                        }
                     }
                     break;
                 case 3:
                     if (transitionTo == -1) Mode = -1;
                     break;
             }
-            if (Mode != 2 && RotateAngle != 0)
+            if (Mode != 2 && RotateAngle != 0 && !_3d)
             {
                 if (Math.Abs(RotateAngle) > Math.PI / 4)
                 {
@@ -237,7 +255,7 @@ namespace Simitone.Client.UI.Panels
             if (Mode == -1)
             {
                 ScrollVelocity *= 0.95f * Math.Min(ScrollVelocity.Length(), 1);
-                if (Master.TargetZoom < 1.25f && ZoomFreezeTime == 0) {
+                if (Master.TargetZoom < 1.25f && ZoomFreezeTime == 0 && !_3d) {
                     float snapZoom = 1f;
                     float dist = 200f;
                     foreach (var snappable in SnapZooms)
@@ -265,7 +283,7 @@ namespace Simitone.Client.UI.Panels
 
             UpdatesSinceDraw++;
 
-            if (Math.Abs(RotateAngle) > Math.PI / 8) //>20 degrees starts a rotation gesture. 40 degrees ends it. 
+            if (Math.Abs(RotateAngle) > Math.PI / 8 && !_3d) //>20 degrees starts a rotation gesture. 40 degrees ends it. 
             {
                 if (RotationAnim == null)
                 {

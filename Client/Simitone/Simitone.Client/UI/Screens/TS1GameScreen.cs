@@ -270,6 +270,9 @@ namespace Simitone.Client.UI.Screens
         {
             GameFacade.Game.IsFixedTimeStep = (vm == null || vm.Ready);
 
+            Visible = (World?.State as FSO.LotView.RC.WorldStateRC)?.CameraMode != true;
+            GameFacade.Game.IsMouseVisible = Visible;
+
             base.Update(state);
             if (state.NewKeys.Contains(Keys.NumPad1)) ChangeSpeedTo(1);
             if (state.NewKeys.Contains(Keys.NumPad2)) ChangeSpeedTo(2);
@@ -345,7 +348,14 @@ namespace Simitone.Client.UI.Screens
         {
             CleanupLastWorld();
 
-            World = new FSO.LotView.World(GameFacade.GraphicsDevice);
+            if (FSOEnvironment.Enable3D)
+            {
+                World = new FSO.LotView.RC.WorldRC(GameFacade.GraphicsDevice);
+            } else
+            {
+                World = new FSO.LotView.World(GameFacade.GraphicsDevice);
+            }
+
             World.Opacity = 1;
             GameFacade.Scenes.Add(World);
 
