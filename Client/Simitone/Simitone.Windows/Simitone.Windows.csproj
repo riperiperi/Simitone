@@ -61,6 +61,10 @@
       <Project>{6d75e618-19ca-4c51-9546-f10965fbc0b8}</Project>
       <Name>MonoGame.Framework.WindowsGL</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\FreeSO\Other\libs\mp3sharp\mp3sharp\Mp3Sharp.csproj">
+      <Project>{834cab58-648d-47cc-ac6f-d01c08c809a4}</Project>
+      <Name>Mp3Sharp</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\FreeSO\TSOClient\FSO.IDE\FSO.IDE.csproj">
       <Project>{5deb20eb-1eb7-48f9-922c-463abae56e63}</Project>
       <Name>FSO.IDE</Name>
