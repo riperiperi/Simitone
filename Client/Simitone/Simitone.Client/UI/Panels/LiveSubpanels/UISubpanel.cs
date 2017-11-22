@@ -24,7 +24,14 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
             Game = game;
         }
 
-        public void Kill()
+        public override void GameResized()
+        {
+            var screenWidth = UIScreen.Current.ScreenWidth;
+            Size = new Vector2(screenWidth - 342, 128);
+            base.GameResized();
+        }
+
+        public virtual void Kill()
         {
             GameFacade.Screens.Tween.To(this, 0.3f, new Dictionary<string, float>() { { "Opacity", 0f } });
             GameThread.SetTimeout(() =>

@@ -1,6 +1,7 @@
 ﻿
 using FSO.Client;
 using FSO.Client.Debug;
+using FSO.Client.UI.Controls;
 using FSO.Client.UI.Framework;
 using FSO.Client.UI.Model;
 using FSO.Common;
@@ -76,7 +77,7 @@ namespace Simitone.Client.UI.Screens
                     else
                     {
                         var targ = (WorldZoom)(4 - value); //near is 3 for some reason... will probably revise
-                        HITVM.Get().PlaySoundEvent(UIMusic.None);
+                        //HITVM.Get().PlaySoundEvent(UIMusic.None);
                         LotControl.Visible = true;
                         Bg.Visible = false;
                         World.Visible = true;
@@ -173,15 +174,23 @@ namespace Simitone.Client.UI.Screens
 
             if (Content.Get().TS1)
             {
-                TS1NeighPanel = new UINeighborhoodSelectionPanel(4);
-                TS1NeighPanel.OnHouseSelect += (house) =>
-                {
-                    ActiveFamily = Content.Get().Neighborhood.GetFamilyForHouse((short)house);
-                    InitializeLot(Path.Combine(Content.Get().TS1BasePath, "UserData/Houses/House" + house.ToString().PadLeft(2, '0') + ".iff"), false);// "UserData/Houses/House21.iff"
-                    Remove(TS1NeighPanel);
-                };
-                Add(TS1NeighPanel);
+                NeighSelection();
             }
+        }
+
+        public void NeighSelection()
+        {
+            TS1NeighPanel = new UINeighborhoodSelectionPanel(4);
+            var switcher = new UINeighbourhoodSwitcher(TS1NeighPanel, 4);
+            TS1NeighPanel.OnHouseSelect += (house) =>
+            {
+                ActiveFamily = Content.Get().Neighborhood.GetFamilyForHouse((short)house);
+                InitializeLot(Path.Combine(FSOEnvironment.UserDir, "UserData/Houses/House" + house.ToString().PadLeft(2, '0') + ".iff"), false);// "UserData/Houses/House21.iff"
+                Remove(TS1NeighPanel);
+                Remove(switcher);
+            };
+            Add(TS1NeighPanel);
+            Add(switcher);
         }
 
         public override void GameResized()
@@ -208,6 +217,7 @@ namespace Simitone.Client.UI.Screens
             //3 speed is 10x
 
             if (vm == null) return;
+            if (vm.SpeedMultiplier == -1) return;
 
             switch (vm.SpeedMultiplier)
             {
@@ -300,7 +310,10 @@ namespace Simitone.Client.UI.Screens
                 }
                 SwitchLot = -1;
             }
+            //vm.Context.Clock.Hours = 12;
             if (vm != null) vm.Update();
+
+            //SaveHouseButton_OnButtonClick(null);
         }
 
         public override void PreDraw(UISpriteBatch batch)
@@ -359,7 +372,7 @@ namespace Simitone.Client.UI.Screens
             World.Opacity = 1;
             GameFacade.Scenes.Add(World);
 
-            var globalLink = new VMTSOGlobalLinkStub();
+            var globalLink = new VMTS1GlobalLinkStub();
             Driver = new VMServerDriver(globalLink);
 
             vm = new VM(new VMContext(World), Driver, new UIHeadlineRendererProvider());
@@ -368,14 +381,7 @@ namespace Simitone.Client.UI.Screens
 
             LotControl = new UILotControl(vm, World);
             this.AddAt(0, LotControl);
-            Frontend = new UISimitoneFrontend(this);
-            this.Add(Frontend);
 
-            var time = DateTime.UtcNow;
-            var tsoTime = TSOTime.FromUTC(time);
-
-            vm.Context.Clock.Hours = tsoTime.Item1;
-            vm.Context.Clock.Minutes = tsoTime.Item2;
             if (m_ZoomLevel > 3)
             {
                 World.Visible = false;
@@ -425,6 +431,9 @@ namespace Simitone.Client.UI.Screens
 
             GameFacade.Cursor.SetCursor(CursorType.Normal);
             ZoomLevel = 1;
+
+            Frontend = new UISimitoneFrontend(this);
+            this.Add(Frontend);
         }
 
         public void InitializeLot(string lotName, bool external)
@@ -441,7 +450,6 @@ namespace Simitone.Client.UI.Screens
                 }
                 BlueprintReset(lotName);
 
-                vm.Context.Clock.Hours = 0;
                 vm.TSOState.Size = (10) | (3 << 8);
                 vm.Context.UpdateTSOBuildableArea();
                 vm.MyUID = 1;
@@ -471,6 +479,9 @@ namespace Simitone.Client.UI.Screens
                 GameFacade.Cursor.SetCursor(CursorType.Normal);
                 ZoomLevel = 1;
             }
+
+            Frontend = new UISimitoneFrontend(this);
+            this.Add(Frontend);
         }
 
         public void BlueprintReset(string path)
@@ -515,7 +526,14 @@ namespace Simitone.Client.UI.Screens
                     TargetSize = targetSize
                 });
             }
+
             vm.Tick();
+
+            if (ActiveFamily == null)
+            {
+                vm.SetGlobalValue(32, 1);
+                vm.SpeedMultiplier = -1;
+            }
         }
 
 
@@ -546,14 +564,75 @@ namespace Simitone.Client.UI.Screens
             if (vm == null) return;
 
             var exporter = new VMWorldExporter();
-            exporter.SaveHouse(vm, GameFacade.GameFilePath("housedata/blueprints/house_00.xml"));
+            Directory.CreateDirectory(Path.Combine(FSOEnvironment.UserDir, "Blueprints/cas.xml"));
+            exporter.SaveHouse(vm, Path.Combine(FSOEnvironment.UserDir, "Blueprints/cas.xml"));
             var marshal = vm.Save();
             Directory.CreateDirectory(Path.Combine(FSOEnvironment.UserDir, "LocalHouse/"));
-            using (var output = new FileStream(Path.Combine(FSOEnvironment.UserDir, "LocalHouse/house_00.fsov"), FileMode.Create))
+            using (var output = new FileStream(Path.Combine(FSOEnvironment.UserDir, "LocalHouse/cas.fsov"), FileMode.Create))
             {
                 marshal.SerializeInto(new BinaryWriter(output));
             }
-            if (vm.GlobalLink != null) ((VMTSOGlobalLinkStub)vm.GlobalLink).Database.Save();
+        }
+
+        private UIMobileAlert CloseAlert;
+        public override bool CloseAttempt()
+        {
+            GameThread.NextUpdate(x =>
+            {
+                if (CloseAlert == null)
+                {
+                    var canSave = vm != null;
+                    CloseAlert = new UIMobileAlert(new FSO.Client.UI.Controls.UIAlertOptions
+                    {
+                        Title = GameFacade.Strings.GetString("153", "1"), //quit?
+                        Message = GameFacade.Strings.GetString("153", canSave?"6":"2"), //are you sure (2), save before quitting (3)
+                        Buttons = 
+                        canSave?
+                        UIAlertButton.YesNoCancel(
+                            (b) => { Save(); GameFacade.Game.Exit(); },
+                            (b) => { GameFacade.Game.Exit(); },
+                            (b) => { CloseAlert.Close(); CloseAlert = null; }
+                            )
+                        :
+                        UIAlertButton.YesNo(
+                            (b) => { GameFacade.Game.Exit(); },
+                            (b) => { CloseAlert.Close(); CloseAlert = null; }
+                            )
+                    });
+                    GlobalShowDialog(CloseAlert, true);
+                }
+            });
+            return false;
+        }
+
+        public void ReturnToNeighbourhood()
+        {
+            if (CloseAlert == null)
+            {
+                CloseAlert = new UIMobileAlert(new FSO.Client.UI.Controls.UIAlertOptions
+                {
+                    Title = GameFacade.Strings.GetString("153", "3"), //save
+                    Message = GameFacade.Strings.GetString("153", "4"), //Do you want to save the game?
+                    Buttons =
+                    UIAlertButton.YesNoCancel(
+                        (b) => { Save(); ExitLot(); CloseAlert.Close(); CloseAlert = null; },
+                        (b) => { ExitLot(); CloseAlert.Close(); CloseAlert = null; },
+                        (b) => { CloseAlert.Close(); CloseAlert = null; }
+                        )
+                });
+                GlobalShowDialog(CloseAlert, true);
+            }
+        }
+
+        public void Save()
+        {
+
+        }
+
+        public void ExitLot()
+        {
+            CleanupLastWorld();
+            NeighSelection();
         }
     }
 }

@@ -12,6 +12,7 @@ namespace Simitone.Windows.GameLocator
     {
         public string FindTheSimsOnline()
         {
+            return "";
             string Software = "";
 
             using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))

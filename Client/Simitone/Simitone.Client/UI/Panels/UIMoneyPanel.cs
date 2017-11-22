@@ -71,6 +71,7 @@ namespace Simitone.Client.UI.Panels
         public override void Update(UpdateState state)
         {
             base.Update(state);
+            Visible = Game.LotControl.ActiveEntity != null;
             var money = GetMoney();
             if (LastMoney != money)
             {
@@ -82,6 +83,7 @@ namespace Simitone.Client.UI.Panels
 
         public override void Draw(UISpriteBatch batch)
         {
+            if (!Visible) return;
             DrawLocalTexture(batch, Bg, new Rectangle(0, 0, 12, 24), Vector2.Zero, Vector2.One, UIStyle.Current.Bg);
             DrawLocalTexture(batch, Bg, new Rectangle(12, 0, 12, 24), new Vector2(12, 0), new Vector2(8.666667f, 1), UIStyle.Current.Bg);
             DrawLocalTexture(batch, Bg, new Rectangle(24, 0, 12, 24), new Vector2(116, 0), Vector2.One, UIStyle.Current.Bg);

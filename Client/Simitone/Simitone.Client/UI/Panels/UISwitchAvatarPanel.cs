@@ -27,16 +27,17 @@ namespace Simitone.Client.UI.Panels
             Game = screen;
             Bg = Content.Get().CustomUI.Get("pswitch_bg.png").Get(GameFacade.GraphicsDevice);
 
-            var familyMembers = Game.vm.Context.ObjectQueries.Avatars.Where(x => ((VMAvatar)x).GetPersonData(FSO.SimAntics.Model.VMPersonDataVariable.TS1FamilyNumber) == (Game.vm.CurrentFamily.ChunkID));
+            var familyMembers = Game.vm.Context.ObjectQueries.Avatars.Where(x => ((VMAvatar)x).GetPersonData(FSO.SimAntics.Model.VMPersonDataVariable.TS1FamilyNumber) == (Game.vm.CurrentFamily?.ChunkID));
             int i = 0;
             foreach (var fam in familyMembers)
             {
                 var btn = new UIAvatarSelectButton(UIIconCache.GetObject(fam));
+                btn.Name = fam.Name;
                 if (fam.PersistID > 0) btn.Outlined = true;
                 btn.Opacity = 0f;
                 var id = fam.ObjectID;
                 btn.OnButtonClick += (b) => { Select(id); };
-                btn.Y = 64;
+                btn.Y = 54;
                 GameFacade.Screens.Tween.To(btn, 0.3f, new Dictionary<string, float>() { { "X", 185 + (i++) * 100 }, { "Opacity", 1f } }, TweenQuad.EaseOut);
                 Add(btn);
             }
@@ -72,11 +73,15 @@ namespace Simitone.Client.UI.Panels
         public Texture2D Icon;
         public Texture2D Outline;
         public bool Outlined;
+        public string Name;
+        public TextStyle Style;
 
         public UIAvatarSelectButton(Texture2D icon) : base(Content.Get().CustomUI.Get("pswitch_icon_bg.png").Get(GameFacade.GraphicsDevice))
         {
             Icon = icon;
             Outline = Content.Get().CustomUI.Get("pswitch_icon_sel.png").Get(GameFacade.GraphicsDevice);
+            Style = TextStyle.DefaultLabel.Clone();
+            Style.Color = Color.White;
         }
 
         public override void Draw(UISpriteBatch SBatch)
@@ -84,6 +89,14 @@ namespace Simitone.Client.UI.Panels
             DrawLocalTexture(SBatch, Texture, null, new Vector2(Texture.Width, Texture.Height) / -2, Vector2.One, new Color(104, 164, 184, 255));
             if (Icon != null) DrawLocalTexture(SBatch, Icon, new Vector2(Icon.Width, Icon.Height) / -2);
             if (Outlined) DrawLocalTexture(SBatch, Outline, null, new Vector2(Outline.Width, Outline.Height) / -2, Vector2.One, UIStyle.Current.ActiveSelection);
+            if (Name != null)
+            {
+                Style.Size = 10;
+                var size = Style.MeasureString(Name);
+                Style.Size = (int)Math.Min(15, Math.Max(8, (100 / size.X) * 10));
+                var name2 = Style.TruncateToWidth(Name, 100);
+                DrawLocalString(SBatch, name2, new Vector2(0, Texture.Height / 2 + 16), Style, new Rectangle(0, 0, 1, 1), TextAlignment.Center | TextAlignment.Middle);
+            }
         }
     }
 }

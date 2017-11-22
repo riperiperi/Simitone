@@ -18,6 +18,8 @@ namespace Simitone.Client.UI.Controls
         public int ItemWidth;
         public Texture2D ScrollEdgeL;
         public Texture2D ScrollEdgeR;
+        public bool DrawBounds = true;
+        public int Margin;
 
         private UIMouseEventRef HitTest;
 
@@ -42,6 +44,7 @@ namespace Simitone.Client.UI.Controls
         private int MouseDownID = -1;
         private Point MouseDownAt;
         private bool InScroll;
+        private UITSContainer LastSelected;
         private List<float> ScrollVelocityHistory = new List<float>();
 
         public void MouseEvents(UIMouseEventType type, UpdateState state)
@@ -58,7 +61,7 @@ namespace Simitone.Client.UI.Controls
                 case UIMouseEventType.MouseUp:
                     if (!InScroll)
                     {
-                        Select(MouseDownAt);
+                        Select(GlobalPoint(MouseDownAt.ToVector2()).ToPoint());
                     }
                     else
                     {
@@ -86,7 +89,14 @@ namespace Simitone.Client.UI.Controls
         public void Select(Point at)
         {
             var item = (int)(at.X + Scroll) / ItemWidth;
-            
+            if (item >= LengthProvider()) return;
+            var rItem = GetOrPrepare(item);
+            if (rItem != null)
+            {
+                LastSelected?.Deselected();
+                rItem.Selected();
+                LastSelected = rItem;
+            }
         }
 
         public UITSContainer GetOrPrepare(int id)
@@ -138,7 +148,7 @@ namespace Simitone.Client.UI.Controls
 
             Scroll += ScrollVelocity;
             ScrollVelocity *= 0.9f;
-            Scroll = Math.Max(0, Math.Min(length * ItemWidth - Size.X, Scroll));
+            Scroll = Math.Max(-Margin, Math.Min(length * ItemWidth - Size.X + Margin, Scroll));
 
             //update children positions.
             //delete ones that are not 
@@ -149,6 +159,7 @@ namespace Simitone.Client.UI.Controls
             var e = b + (Size.X + (ItemWidth - 1)) / ItemWidth;
             for (int i=b; i<e; i++)
             {
+                if (i < 0) continue;
                 if (i >= length) break;
                 var item = GetOrPrepare(i);
                 untouched.Remove(item);
@@ -164,11 +175,19 @@ namespace Simitone.Client.UI.Controls
             Invalidate();
         }
 
+        public void SetScroll(float value)
+        {
+            Scroll = value;
+        }
+
         public override void Draw(UISpriteBatch batch)
         {
             base.Draw(batch);
-            DrawLocalTexture(batch, ScrollEdgeL, new Vector2(0, Size.Y / 2 - 64));
-            DrawLocalTexture(batch, ScrollEdgeR, new Vector2(Size.X-15, Size.Y / 2 - 64));
+            if (DrawBounds)
+            {
+                DrawLocalTexture(batch, ScrollEdgeL, new Vector2(0, Size.Y / 2 - 64));
+                DrawLocalTexture(batch, ScrollEdgeR, new Vector2(Size.X - 15, Size.Y / 2 - 64));
+            }
         }
 
         public void Reset()
@@ -178,6 +197,7 @@ namespace Simitone.Client.UI.Controls
             {
                 Remove(child);
             }
+            LastSelected = null;
         }
     }
 
@@ -185,6 +205,11 @@ namespace Simitone.Client.UI.Controls
     {
         public int ItemID;
         public virtual void Selected()
+        {
+
+        }
+
+        public virtual void Deselected()
         {
 
         }

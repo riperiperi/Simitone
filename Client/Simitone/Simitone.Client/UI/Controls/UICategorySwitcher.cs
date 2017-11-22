@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FSO.Common.Rendering.Framework.Model;
 
 namespace Simitone.Client.UI.Controls
 {
@@ -19,6 +20,7 @@ namespace Simitone.Client.UI.Controls
         public UIDiagonalStripe Stripe;
         public UIVertGrad Grad;
         public event Action<int> OnCategorySelect;
+        public event Action OnOpen;
         public int ActiveCategory;
         public List<UICategory> Categories;
         public List<UIStencilButton> CatSwitchButtons = new List<UIStencilButton>();
@@ -117,12 +119,18 @@ namespace Simitone.Client.UI.Controls
             {
                 Close(); return;
             }
+            OnOpen?.Invoke();
             GameFacade.Screens.Tween.To(this, 0.3f, new Dictionary<string, float>() { { "CategoryExpand", 1f } }, TweenQuad.EaseOut);
         }
 
         public void Close()
         {
             GameFacade.Screens.Tween.To(this, 0.3f, new Dictionary<string, float>() { { "CategoryExpand", 0f } }, TweenQuad.EaseOut);
+        }
+
+        public override void Update(UpdateState state)
+        {
+            base.Update(state);
         }
     }
 

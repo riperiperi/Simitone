@@ -52,6 +52,10 @@ namespace Simitone.Client.UI.Panels
 
         public UISwitchAvatarPanel SwitchAvatar;
         public bool PanelActive;
+        public UIMainPanelMode Mode;
+
+        public event Action OnEndSelect;
+        public event Action<UIMainPanelMode> ModeChanged;
 
         public string[] FloorNames = new string[]
         {
@@ -70,6 +74,31 @@ namespace Simitone.Client.UI.Panels
             new UICategory() { ID = 2, IconName = "live_personality.png" },
             new UICategory() { ID = 3, IconName = "live_relationships.png" },
             new UICategory() { ID = 4, IconName = "live_inventory.png" }
+        };
+
+
+        private List<UICategory> BuyCategories = new List<UICategory>()
+        {
+            new UICategory() { ID = 0, IconName = "cat_seat.png" },
+            new UICategory() { ID = 1, IconName = "cat_surf.png" },
+            new UICategory() { ID = 2, IconName = "cat_appl.png" },
+            new UICategory() { ID = 3, IconName = "cat_elec.png" },
+            new UICategory() { ID = 4, IconName = "cat_plum.png" },
+            new UICategory() { ID = 5, IconName = "cat_deco.png" },
+            new UICategory() { ID = 6, IconName = "cat_misc.png" },
+            new UICategory() { ID = 7, IconName = "cat_ligt.png" },
+        };
+
+        private List<UICategory> BuildCategories = new List<UICategory>()
+        {
+            new UICategory() { ID = 0, IconName = "cat_build_arch.png" },
+            new UICategory() { ID = 1, IconName = "cat_build_outs.png" },
+            new UICategory() { ID = 2, IconName = "cat_build_objs.png" },
+        };
+
+        private List<UICategory> OptionsCategories = new List<UICategory>()
+        {
+            new UICategory() { ID = 0, IconName = "cat_build_arch.png" },
         };
 
         public UIMainPanel(TS1GameScreen game) : base()
@@ -122,6 +151,7 @@ namespace Simitone.Client.UI.Panels
             Switcher.Position = new Vector2(164, 0);
             Switcher.InitCategories(LiveCategories);
             Switcher.OnCategorySelect += Switcher_OnCategorySelect;
+            Switcher.OnOpen += Switcher_OnOpen;
             Add(Switcher);
             
             foreach (var fade in GetFadeables())
@@ -129,26 +159,108 @@ namespace Simitone.Client.UI.Panels
                 fade.Opacity = 0;
             }
 
+            Game.LotControl.QueryPanel.Position = new Vector2(53, -5);
+            Add(Game.LotControl.QueryPanel);
+            Game.LotControl.PickupPanel.Opacity = 0;
+            Add(Game.LotControl.PickupPanel);
+
             CurWidth = 0;
         }
 
-         public void Switcher_OnCategorySelect(int obj)
+        private void Switcher_OnOpen()
+        {
+            var panel = SubPanel as UIBuyBrowsePanel;
+            if (panel != null)
+            {
+                panel.Reset();
+            }
+        }
+
+        public void SetMode(UIMainPanelMode mode)
+        {
+            if (mode == Mode) return;
+            Mode = mode;
+
+            Game.LotControl.World.State.BuildMode = 0;
+            switch (mode)
+            {
+                case UIMainPanelMode.LIVE:
+                    Switcher.InitCategories(LiveCategories);
+                    break;
+                case UIMainPanelMode.BUY:
+                    Switcher.InitCategories(BuyCategories);
+                    Game.LotControl.World.State.BuildMode = 1;
+                    break;
+                case UIMainPanelMode.BUILD:
+                    Switcher.InitCategories(BuildCategories);
+                    Game.LotControl.World.State.BuildMode = 2;
+                    break;
+                case UIMainPanelMode.OPTIONS:
+                    Switcher.InitCategories(OptionsCategories);
+                    break;
+            }
+
+            var live = (mode == UIMainPanelMode.LIVE);
+            Game.LotControl.LiveMode = live;
+            HideButton.Visible = live;
+
+            ModeChanged?.Invoke(mode);
+        }
+
+        public void Switcher_OnCategorySelect(int obj)
         {
             UISubpanel panel = null;
-            switch (obj)
+            switch (Mode)
             {
-                case 0:
-                    panel = new UIMotiveSubpanel(Game); break;
-                case 1:
-                    panel = new UIJobSubpanel(Game); break;
-                case 2:
-                    panel = new UIPersonalitySubpanel(Game); break;
-                case 3:
-                    panel = new UIRelationshipSubpanel(Game); break;
-                case 4:
-                    panel = new UIInventorySubpanel(Game); break;
+                case UIMainPanelMode.LIVE:
+                    switch (obj)
+                    {
+                        case 0:
+                            panel = new UIMotiveSubpanel(Game); break;
+                        case 1:
+                            panel = new UIJobSubpanel(Game); break;
+                        case 2:
+                            panel = new UIPersonalitySubpanel(Game); break;
+                        case 3:
+                            panel = new UIRelationshipSubpanel(Game); break;
+                        case 4:
+                            panel = new UIInventorySubpanel(Game); break;
+                    }
+                    break;
+                case UIMainPanelMode.BUY:
+                    panel = new UIBuyBrowsePanel(Game, (sbyte)obj, GetLotType(false));
+                    break;
+                case UIMainPanelMode.BUILD:
+                    panel = new UIBuyBrowsePanel(Game, (sbyte)obj, UICatalogMode.Build);
+                    break;
+                case UIMainPanelMode.OPTIONS:
+                    panel = new UIButtonSubpanel(Game, new UICatFunc[] {
+                        new UICatFunc(GameFacade.Strings.GetString("145", "3"), "opt_save.png", () => { Game.Save(); }),
+                        new UICatFunc(GameFacade.Strings.GetString("145", "1"), "opt_neigh.png", () => { Game.ReturnToNeighbourhood(); }),
+                        new UICatFunc(GameFacade.Strings.GetString("145", "5"), "opt_quit.png", () => { Game.CloseAttempt(); }),
+                    });
+                    break;
             }
             SetSubpanel(panel);
+        }
+
+        public UICatalogMode GetLotType(bool music)
+        {
+            UICatalogMode mode;
+            var house = Game.vm.GetGlobalValue(10);
+            var zones = Content.Get().Neighborhood.ZoningDictionary;
+            short result = 1;
+            zones.TryGetValue(house, out result);
+            var community = result == 1;
+
+            if (house >= 21 && house <= 31) mode = UICatalogMode.Downtown;
+            else if (house >= 40 && house <= 49) mode = UICatalogMode.Vacation;
+            else if (house >= 81 && house <= 90) mode = UICatalogMode.Studiotown;
+            else if (house >= 90 && house <= 99 && (music || community)) mode = UICatalogMode.Magictown;
+            else if (community) mode = UICatalogMode.Community;
+            else mode = (music && Game.vm.GetGlobalValue(32) > 0)?UICatalogMode.Downtown:UICatalogMode.Normal;
+
+            return mode;
         }
 
         public void SetSubpanel(UISubpanel sub)
@@ -163,6 +275,15 @@ namespace Simitone.Client.UI.Panels
                 SubPanel.Position = new Vector2(263, 0);
                 Add(SubPanel);
             }
+        }
+
+        public void SetSubpanelPickup(float opacity)
+        {
+            //used to hide subpanels to make way for the PickupPanel
+            if (SubPanel != null) GameFacade.Screens.Tween.To(SubPanel, 0.3f, new Dictionary<string, float>() { { "Opacity", opacity } }, TweenQuad.EaseOut);
+            GameFacade.Screens.Tween.To(Switcher.MainButton, 0.3f, new Dictionary<string, float>() { { "Opacity", opacity } }, TweenQuad.EaseOut);
+            GameFacade.Screens.Tween.To(Game.LotControl.PickupPanel, 0.3f, new Dictionary<string, float>() { { "Opacity", 1-opacity } }, TweenQuad.EaseOut);
+            if (opacity == 0) Switcher.Close();
         }
 
         private void UpdateWidth()
@@ -234,6 +355,16 @@ namespace Simitone.Client.UI.Panels
                 FloorDownBtn.Disabled = LastFloor == 1;
                 FloorUpBtn.Disabled = LastFloor == 5;
             }
+
+            Game.LotControl.PickupPanel.Visible = Game.LotControl.PickupPanel.Opacity > 0;
+
+            if (Mode != UIMainPanelMode.LIVE)
+            {
+                Game.vm.SpeedMultiplier = -1;
+            } else if (Game.vm.SpeedMultiplier < 0)
+            {
+                Game.vm.SpeedMultiplier = 0;
+            }
         }
 
         public void Open()
@@ -282,6 +413,7 @@ namespace Simitone.Client.UI.Panels
                 Switcher_OnCategorySelect(Switcher.ActiveCategory);
                 SwitchAvatar = null;
                 ShowingSelect = false;
+                OnEndSelect?.Invoke();
             };
         }
 
@@ -291,5 +423,13 @@ namespace Simitone.Client.UI.Panels
             if (PanelActive) CurWidth = Game.ScreenWidth - (64 + 15);
             HideButton.X = Game.ScreenWidth - (50 + 64 + 15);
         }
+    }
+
+    public enum UIMainPanelMode
+    {
+        LIVE,
+        BUY,
+        BUILD,
+        OPTIONS
     }
 }

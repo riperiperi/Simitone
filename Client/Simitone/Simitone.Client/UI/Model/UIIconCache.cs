@@ -57,6 +57,7 @@ namespace Simitone.Client.UI.Model
             var pos2 = m_Head.Skeleton.GetBone("HEAD").AbsolutePosition;
             pos2.Y += 0.1f;
             HeadCamera.Position = new Vector3(0, pos2.Y, 12.5f);
+            HeadCamera.FOV = (float)Math.PI / 3f;
             HeadCamera.Target = pos2;
             HeadCamera.ProjectionOrigin = new Vector2(74/2, 74/2);
 

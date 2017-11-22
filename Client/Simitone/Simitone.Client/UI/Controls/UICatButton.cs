@@ -14,6 +14,7 @@ namespace Simitone.Client.UI.Controls
     public class UICatButton : UIStencilButton
     {
         private Texture2D CatBase;
+        private Texture2D Replaced;
         public UICatButton(Texture2D tex) : base(tex)
         {
             Alpha = 1f;
@@ -21,8 +22,27 @@ namespace Simitone.Client.UI.Controls
             CatBase = Content.Get().CustomUI.Get("cat_btn_base.png").Get(GameFacade.GraphicsDevice);
         }
 
+        public void ReplaceImage(Texture2D tex)
+        {
+            if (Replaced == null)
+            {
+                Replaced = Texture;
+            }
+            Texture = tex;
+        }
+
+        public void RestoreImage()
+        {
+            if (Replaced != null)
+            {
+                Texture = Replaced;
+                Replaced = null;
+            }
+        }
+
         public override void Draw(UISpriteBatch SBatch)
         {
+            if (!Visible) return;
             base.Draw(SBatch);
             var frame = CurrentFrame;
             if (Disabled)

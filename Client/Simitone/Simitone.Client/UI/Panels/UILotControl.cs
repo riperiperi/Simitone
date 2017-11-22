@@ -32,13 +32,16 @@ using FSO.Content;
 using FSO.Client.Debug;
 using Simitone.Client.UI.Screens;
 using FSO.LotView.RC;
+using Simitone.Client.UI.Panels.LotControls;
+using FSO.Client.UI.Panels.LotControls;
+using FSO.UI.Panels.LotControls;
 
 namespace Simitone.Client.UI.Panels
 {
     /// <summary>
     /// Generates pie menus when the player clicks on objects.
     /// </summary>
-    public class UILotControl : UIContainer
+    public class UILotControl : UIContainer, ILotControl
     {
         private UIMouseEventRef MouseEvt;
         public bool MouseIsOn;
@@ -50,8 +53,8 @@ namespace Simitone.Client.UI.Panels
         private Texture2D RMBCursor;
 
         public FSO.SimAntics.VM vm;
-        public FSO.LotView.World World;
-        public VMEntity ActiveEntity;
+        public FSO.LotView.World World { get; set; }
+        public VMEntity ActiveEntity { get; set; }
         public uint SelectedSimID
         {
             get
@@ -66,6 +69,7 @@ namespace Simitone.Client.UI.Panels
         public bool LiveMode = true;
         public bool PanelActive = false;
         public UILotControlTouchHelper Touch;
+        public UIArchTouchHelper ArchTouch;
 
         public int WallsMode = 1;
 
@@ -100,6 +104,11 @@ namespace Simitone.Client.UI.Panels
         private int LastWallMode = -1; //invalidates last roomcuts
         private bool LastRectCutNotable = false; //set if the last rect cut made a noticable change to the cuts array. If true refresh regardless of new cut effect.
 
+        public UIObjectHolder ObjectHolder;
+        public UICustomLotControl CustomControl;
+        public UIQueryPanel QueryPanel;
+        public UIPickupPanel PickupPanel;
+
         /// <summary>
         /// Creates a new UILotControl instance.
         /// </summary>
@@ -109,17 +118,18 @@ namespace Simitone.Client.UI.Panels
         {
             this.vm = vm;
             this.World = World;
-
-            ActiveEntity = vm.Entities.FirstOrDefault(x => x is VMAvatar);
+            
             MouseEvt = this.ListenForMouse(new Microsoft.Xna.Framework.Rectangle(0, 0,
                 GlobalSettings.Default.GraphicsWidth, GlobalSettings.Default.GraphicsHeight), OnMouse);
 
             Queue = new UIInteractionQueue(ActiveEntity, vm);
             this.Add(Queue);
 
-            //ObjectHolder = new UIObjectHolder(vm, World, this);
+            ObjectHolder = new UIObjectHolder(vm, World, this);
             Touch = new UILotControlTouchHelper(this);
             Add(Touch);
+            ArchTouch = new UIArchTouchHelper(this);
+            Add(ArchTouch);
             SetupQuery();
 
 
@@ -131,25 +141,22 @@ namespace Simitone.Client.UI.Panels
 
         public void SetupQuery()
         {
-            /*
-            UIContainer parent = null;
+            /*UIContainer parent = null;
             if (QueryPanel?.Parent?.Parent != null)
             {
                 parent = QueryPanel.Parent;
-            }
+            }*/
 
             QueryPanel = new UIQueryPanel(World);
-            QueryPanel.OnSellBackClicked += ObjectHolder.SellBack;
-            QueryPanel.OnInventoryClicked += ObjectHolder.MoveToInventory;
-            QueryPanel.OnAsyncBuyClicked += ObjectHolder.AsyncBuy;
-            QueryPanel.OnAsyncSaleClicked += ObjectHolder.AsyncSale;
-            QueryPanel.OnAsyncPriceClicked += ObjectHolder.AsyncSale;
-            QueryPanel.OnAsyncSaleCancelClicked += ObjectHolder.AsyncCancelSale;
             QueryPanel.X = 0;
             QueryPanel.Y = -114;
 
-            if (parent != null) parent.Add(QueryPanel);
-            */
+            PickupPanel = new UIPickupPanel();
+            PickupPanel.OnResponse += (resp) =>
+            {
+                if (resp) ObjectHolder.SellBack(null);
+                else ObjectHolder.Cancel();
+            };
         }
 
         public override void GameResized()
@@ -158,7 +165,7 @@ namespace Simitone.Client.UI.Panels
             MouseEvt.Region.Width = GlobalSettings.Default.GraphicsWidth;
             MouseEvt.Region.Height = GlobalSettings.Default.GraphicsHeight;
 
-            SetupQuery();
+            //SetupQuery();
         }
 
 
@@ -302,7 +309,7 @@ namespace Simitone.Client.UI.Panels
 
             if (type == UIMouseEventType.MouseOver)
             {
-                //if (QueryPanel.Mode == 1) QueryPanel.Active = false;
+                if (QueryPanel.Mode == 1) QueryPanel.SetShown(false);
                 MouseIsOn = true;
             }
             else if (type == UIMouseEventType.MouseOut)
@@ -313,16 +320,28 @@ namespace Simitone.Client.UI.Panels
             }
             else if (type == UIMouseEventType.MouseDown)
             {
+                if (!FSOEnvironment.SoftwareKeyboard)
+                {
+                    if (!LiveMode)
+                    {
+                        if (CustomControl != null) CustomControl.MouseDown(state);
+                        else ObjectHolder.MouseDown(state);
+                        return;
+                    }
+                }
                 Touch.MiceDown.Add(state.CurrentMouseID);
             }
             else if (type == UIMouseEventType.MouseUp)
             {
                 Touch.MiceDown.Remove(state.CurrentMouseID);
-                if (!LiveMode)
+                if (!FSOEnvironment.SoftwareKeyboard)
                 {
-                    //if (CustomControl != null) CustomControl.MouseUp(state);
-                    //else ObjectHolder.MouseUp(state);
-                    return;
+                    if (!LiveMode)
+                    {
+                        if (CustomControl != null) CustomControl.MouseUp(state);
+                        else ObjectHolder.MouseUp(state);
+                        return;
+                    }
                 }
                 state.UIState.TooltipProperties.Show = false;
                 state.UIState.TooltipProperties.Opacity = 0;
@@ -331,12 +350,42 @@ namespace Simitone.Client.UI.Panels
             }
         }
 
+        public void SimulateMD(UpdateState state)
+        {
+            if (CustomControl != null) CustomControl.MouseDown(state);
+            else ObjectHolder.MouseDown(state);
+        }
+
+        public void SimulateMU(UpdateState state)
+        {
+            if (CustomControl != null) CustomControl.MouseUp(state);
+            else ObjectHolder.MouseUp(state);
+        }
+
+        public void AddModifier(UILotControlModifiers mod)
+        {
+            if (CustomControl != null)
+                CustomControl.Modifiers |= mod;
+        }
+
+        public void RemoveModifier(UILotControlModifiers mod)
+        {
+            if (CustomControl != null)
+                CustomControl.Modifiers &= ~mod;
+        }
+
         public void ShowPieMenu(Point pt, UpdateState state)
         {
             if (!LiveMode)
             {
-                //if (CustomControl != null) CustomControl.MouseDown(state);
-                //else ObjectHolder.MouseDown(state);
+                /*
+                if (CustomControl != null) CustomControl.MouseDown(state);
+                else ObjectHolder.MouseDown(state);
+                */
+                if (FSOEnvironment.SoftwareKeyboard && ObjectHolder.Holding == null)
+                {
+                    ObjectHolder.MouseDown(state);
+                }
                 return;
             }
             if (PieMenu == null && ActiveEntity != null)
@@ -628,7 +677,7 @@ namespace Simitone.Client.UI.Panels
             if (ActiveEntity == null || ActiveEntity.Dead || ActiveEntity.PersistID != SelectedSimID)
             {
                 ActiveEntity = vm.Entities.FirstOrDefault(x => x is VMAvatar && x.PersistID == SelectedSimID); //try and hook onto a sim if we have none selected.
-                if (ActiveEntity == null) ActiveEntity = vm.Entities.FirstOrDefault(x => x is VMAvatar);
+                //if (ActiveEntity == null) ActiveEntity = vm.Entities.FirstOrDefault(x => x is VMAvatar);
 
                 if (!FoundMe && ActiveEntity != null)
                 {
@@ -719,13 +768,44 @@ namespace Simitone.Client.UI.Panels
                     RMBScroll = false;
                 }
 
+                if (!LiveMode && PieMenu != null)
+                {
+                    PieMenu.RemoveSimScene();
+                    this.Remove(PieMenu);
+                    PieMenu = null;
+                }
+
                 if (LiveMode) LiveModeUpdate(state, scrolled);
-                //else if (CustomControl != null) CustomControl.Update(state, scrolled);
-                //else ObjectHolder.Update(state, scrolled);
+                else if (CustomControl != null)
+                {
+                    if (FSOEnvironment.SoftwareKeyboard) CustomControl.MousePosition = new Point(UIScreen.Current.ScreenWidth / 2, UIScreen.Current.ScreenHeight / 2);
+                    else
+                    {
+                        CustomControl.Modifiers = 0;
+                        if (state.CtrlDown) CustomControl.Modifiers |= UILotControlModifiers.CTRL;
+                        if (state.ShiftDown) CustomControl.Modifiers |= UILotControlModifiers.SHIFT;
+                        CustomControl.MousePosition = state.MouseState.Position;
+                    }
+                    CustomControl.Update(state, scrolled);
+                }
+                else ObjectHolder.Update(state, scrolled);
 
                 //set cutaway around mouse
                 UpdateCutaway(state);
+
+                if (RMBScrollX == int.MinValue) Dummy(); //cannon fodder for mono AOT compilation: never called but gives these constructors a meaning in life
             }
+        }
+
+        private void Dummy()
+        {
+            CustomControl = new UIWallPlacer(vm, World, this, new List<int>());
+            CustomControl = new UIFloorPainter(vm, World, this, new List<int>());
+            CustomControl = new UIWallPainter(vm, World, this, new List<int>());
+            CustomControl = new UIGrassPaint(vm, World, this, new List<int>());
+            CustomControl = new UIRoofer(vm, World, this, new List<int>());
+            CustomControl = new UITerrainFlatten(vm, World, this, new List<int>());
+            CustomControl = new UITerrainRaiser(vm, World, this, new List<int>());
         }
 
         private void UpdateCutaway(UpdateState state)

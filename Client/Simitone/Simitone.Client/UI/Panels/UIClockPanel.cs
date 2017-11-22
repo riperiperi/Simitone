@@ -48,6 +48,7 @@ namespace Simitone.Client.UI.Panels
 
         public bool Expand;
         public VM VM;
+        public bool Hidden;
 
         public UIClockPanel(VM vm) : base()
         {
@@ -130,8 +131,8 @@ namespace Simitone.Client.UI.Panels
             }
 
             MouseEvent.Region = OuterBg.GetBounds();
-
-            var speed = RemapSpeed[VM.SpeedMultiplier];
+            
+            var speed = RemapSpeed[Math.Max(0, VM.SpeedMultiplier)];
             if (speed != LastSpeed)
             {
                 if (speed == 4) InnerBg.Texture = Content.Get().CustomUI.Get("clockinbg_pause.png").Get(GameFacade.GraphicsDevice);
@@ -153,6 +154,7 @@ namespace Simitone.Client.UI.Panels
 
         public void SwitchSpeed(int speed)
         {
+            if (VM.SpeedMultiplier == -1) return;
             switch (VM.SpeedMultiplier)
             {
                 case 0:
@@ -237,6 +239,7 @@ namespace Simitone.Client.UI.Panels
 
         public void SetExpanded(bool expand)
         {
+            if (Hidden) return;
             var time = 0.3f;
             GameFacade.Screens.Tween.To(OuterBg, time, new Dictionary<string, float>() { { "X", (expand) ? 0f : 138f }, { "Width", (expand) ? 334f : 196f } }, TweenQuad.EaseOut);
             GameFacade.Screens.Tween.To(InnerBg, time, new Dictionary<string, float>() { { "X", (expand) ? 10f : 148f } }, TweenQuad.EaseOut);
@@ -248,6 +251,14 @@ namespace Simitone.Client.UI.Panels
             for (int i=0; i<4; i++)
                 GameFacade.Screens.Tween.To(Btns[i], time, new Dictionary<string, float>() { { "X", (expand) ? (151f+46*i) : 289f } }, TweenQuad.EaseOut);
             Expand = expand;
+        }
+
+        public void SetHidden(bool hidden)
+        {
+            if (hidden == Hidden) return;
+            Hidden = hidden;
+            if (hidden) SetExpanded(false);
+            //GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "Y", hidden? (-55f):15f } }, TweenQuad.EaseOut);
         }
     }
 }

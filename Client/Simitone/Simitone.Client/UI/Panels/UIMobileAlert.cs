@@ -70,16 +70,16 @@ namespace Simitone.Client.UI.Panels
                     switch (button.Type)
                     {
                         case UIAlertButtonType.OK:
-                            buttonText = GameFacade.Strings.GetString("142", "ok button");
+                            buttonText = GameFacade.Strings.GetString("142", "0");
                             break;
                         case UIAlertButtonType.Yes:
-                            buttonText = GameFacade.Strings.GetString("142", "yes button");
+                            buttonText = GameFacade.Strings.GetString("142", "2");
                             break;
                         case UIAlertButtonType.No:
-                            buttonText = GameFacade.Strings.GetString("142", "no button");
+                            buttonText = GameFacade.Strings.GetString("142", "3");
                             break;
                         case UIAlertButtonType.Cancel:
-                            buttonText = GameFacade.Strings.GetString("142", "cancel button");
+                            buttonText = GameFacade.Strings.GetString("142", "1");
                             break;
                     }
                 }

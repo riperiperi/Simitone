@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -60,8 +61,12 @@ namespace Simitone.Client.UI.Panels.WorldUI
         {
             if (Sprites == null)
             {
-                Sprites = new FSO.Files.Formats.IFF.IffFile(FSO.Content.Content.Get().GetPath("objectdata/globals/sprites.iff"));
-                WhitePx = TextureGenerator.GetPxWhite(GameFacade.GraphicsDevice);
+                var content = FSO.Content.Content.Get();
+                Sprites = new FSO.Files.Formats.IFF.IffFile(
+                    content.TS1? 
+                        Path.Combine(content.TS1BasePath, "GameData/Sprites.iff") : 
+                        content.GetPath("objectdata/globals/sprites.iff")
+                    );
             }
 
             if (Headline.Operand.Group != VMSetBalloonHeadlineOperandGroup.Algorithmic)
@@ -71,7 +76,6 @@ namespace Simitone.Client.UI.Panels.WorldUI
                 BGSprite = Sprites.Get<SPR>((ushort)(GroupOffsets[(int)VMSetBalloonHeadlineOperandGroup.Balloon]+Headline.Operand.Type));
 
             LastZoom = WorldZoom.Near;
-            RecalculateTarget();
         }
 
         public void RecalculateTarget()
@@ -133,9 +137,10 @@ namespace Simitone.Client.UI.Panels.WorldUI
         }
 
         public override Texture2D DrawFrame(World world)
-        { 
+        {
             if (LastZoom != world.State.Zoom || Texture == null)
             {
+                if (WhitePx == null) WhitePx = TextureGenerator.GetPxWhite(GameFacade.GraphicsDevice);
                 Invalidated = true;
                 LastZoom = world.State.Zoom;
                 RecalculateTarget();

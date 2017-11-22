@@ -11,6 +11,7 @@ using FSO.Common.Rendering.Framework.Model;
 using FSO.Client;
 using Microsoft.Xna.Framework;
 using Simitone.Client.UI.Panels.LiveSubpanels;
+using FSO.Client.UI.Model;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -23,7 +24,7 @@ namespace Simitone.Client.UI.Panels
         public UIMoneyPanel Money;
         public UIMainPanel MainPanel;
         public UIStencilButton ExtendPanelBtn;
-        public UILiveButton LiveButton;
+        public UIModeSwitcher ModeSwitcher;
 
         public bool PanelActive;
         public int LastCut = 0;
@@ -49,25 +50,82 @@ namespace Simitone.Client.UI.Panels
             Add(Money);
 
             MainPanel = new UIMainPanel(screen);
+            MainPanel.OnEndSelect += OnEndSelect;
+            MainPanel.ModeChanged += ModeChanged;
             Add(MainPanel);
 
             ExtendPanelBtn = new UIStencilButton(ui.Get("panel_expand.png").Get(GameFacade.GraphicsDevice));
             ExtendPanelBtn.OnButtonClick += ExpandClicked;
             Add(ExtendPanelBtn);
 
-            var btn = new UILiveButton(screen);
-            btn.MotiveLevel = 0.5f;
-            btn.Position = new Vector2(64 + 15, screen.ScreenHeight - (64 + 15));
-            btn.OnButtonClick += LiveButtonClicked;
-            Add(btn);
-            LiveButton = btn;
-            
-            ExtendPanelBtn.Position = new Vector2(btn.X + 54, btn.Y - 50);
+            var mode = new UIModeSwitcher(screen);
+            mode.Position = new Vector2(64 + 15, screen.ScreenHeight - (64 + 15));
+            mode.OnModeClick += LiveButtonClicked;
+            Add(mode);
+            ModeSwitcher = mode;
+
+            ExtendPanelBtn.Position = new Vector2(mode.X + 54, mode.Y - 50);
 
             MainPanel.X = 64 + 15;
-            MainPanel.Y = btn.Y - 64;
+            MainPanel.Y = mode.Y - 64;
             MainPanel.Visible = false;
 
+            if (Game.vm.GetGlobalValue(32) > 0)
+            {
+                MainPanel.SetMode(UIMainPanelMode.BUY);
+                ModeSwitcher.EndSwitch(MainPanel.Mode);
+                MainPanel.Open();
+            } else
+            {
+                FSO.HIT.HITVM.Get().PlaySoundEvent(UIMusic.None);
+            }
+        }
+
+        private void ModeChanged(UIMainPanelMode obj)
+        {
+            Clock.SetHidden(obj != UIMainPanelMode.LIVE);
+            var lotType = MainPanel.GetLotType(true);
+            var hit = FSO.HIT.HITVM.Get();
+            switch (obj)
+            {
+                case UIMainPanelMode.LIVE:
+                case UIMainPanelMode.OPTIONS:
+                    hit.PlaySoundEvent(UIMusic.None); break;
+                case UIMainPanelMode.BUY:
+                    switch (lotType)
+                    {
+                        case UICatalogMode.Downtown:
+                            hit.PlaySoundEvent(UIMusic.Downtown); break;
+                        case UICatalogMode.Vacation:
+                            hit.PlaySoundEvent(UIMusic.Vacation); break;
+                        case UICatalogMode.Community:
+                            hit.PlaySoundEvent(UIMusic.Unleashed); break;
+                        case UICatalogMode.Studiotown:
+                            hit.PlaySoundEvent(UIMusic.SuperstarTransition); break;
+                        case UICatalogMode.Magictown:
+                            hit.PlaySoundEvent(UIMusic.MagictownBuy); break;
+                        default:
+                            hit.PlaySoundEvent(UIMusic.Buy); break;
+                    }
+                    break;
+                case UIMainPanelMode.BUILD:
+                    switch (lotType)
+                    {
+                        case UICatalogMode.Downtown:
+                            hit.PlaySoundEvent(UIMusic.Downtown); break;
+                        case UICatalogMode.Vacation:
+                            hit.PlaySoundEvent(UIMusic.Vacation); break;
+                        case UICatalogMode.Community:
+                            hit.PlaySoundEvent(UIMusic.Unleashed); break;
+                        case UICatalogMode.Studiotown:
+                            hit.PlaySoundEvent(UIMusic.SuperstarTransition); break;
+                        case UICatalogMode.Magictown:
+                            hit.PlaySoundEvent(UIMusic.MagictownBuild); break;
+                        default:
+                            hit.PlaySoundEvent(UIMusic.Build); break;
+                    }
+                    break;
+            }
         }
 
         private void ExpandClicked(UIElement button)
@@ -76,17 +134,38 @@ namespace Simitone.Client.UI.Panels
             MainPanel.Switcher_OnCategorySelect(MainPanel.Switcher.ActiveCategory);
         }
 
-        private void LiveButtonClicked(UIElement button)
+        private bool LiveButtonClicked(UIMainPanelMode mode)
         {
             if (MainPanel.PanelActive)
             {
-                if (MainPanel.ShowingSelect) MainPanel.SwitchAvatar.Kill();
-                else MainPanel.ShowSelect();
+                if (MainPanel.ShowingSelect)
+                {
+                    //switch to the target mode
+                    MainPanel.SetMode(mode);
+                    MainPanel.SwitchAvatar.Kill();
+                    return false;
+                }
+                else
+                {
+                    StartSelect();
+                    return true;
+                }
             } else
             {
                 MainPanel.Open();
-                MainPanel.ShowSelect();
+                StartSelect();
+                return true;
             }
+        }
+
+        private void StartSelect()
+        {
+            MainPanel.ShowSelect();
+        }
+
+        private void OnEndSelect()
+        {
+            ModeSwitcher.EndSwitch(MainPanel.Mode);
         }
 
         private void CutButton(UIElement button)
@@ -112,7 +191,7 @@ namespace Simitone.Client.UI.Panels
             CutBtn.Selected = false;
             Game.LotControl.World.State.DrawRoofs = (obj == 3);
             Game.LotControl.WallsMode = obj;
-            CutPanel.Kill();
+            CutPanel?.Kill();
             CutPanel = null;
         }
 
@@ -142,7 +221,7 @@ namespace Simitone.Client.UI.Panels
                 CutBtn.X = Game.ScreenWidth - (256 + (138f * ClockTween) + 15);
                 if (CutPanel != null) CutPanel.X = CutBtn.X - 39;
             }
-            LiveButton.Switching = MainPanel.ShowingSelect;
+            ModeSwitcher.LiveButton.Switching = MainPanel.ShowingSelect;
             ExtendPanelBtn.Visible = !MainPanel.PanelActive;
         }
 
@@ -155,10 +234,10 @@ namespace Simitone.Client.UI.Panels
             Clock.Y = 15;
 
             Money.Position = new Vector2(15, Game.ScreenHeight - 172);
-            var btn = LiveButton;
-            btn.Position = new Vector2(64 + 15, Game.ScreenHeight - (64 + 15));
-            ExtendPanelBtn.Position = new Vector2(btn.X + 54, btn.Y - 50);
-            MainPanel.Y = btn.Y - 64;
+            var mode = ModeSwitcher;
+            mode.Position = new Vector2(64 + 15, Game.ScreenHeight - (64 + 15));
+            ExtendPanelBtn.Position = new Vector2(mode.X + 54, mode.Y - 50);
+            MainPanel.Y = mode.Y - 64;
         }
     }
 }

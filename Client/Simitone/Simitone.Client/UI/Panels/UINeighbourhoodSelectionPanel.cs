@@ -174,7 +174,6 @@ namespace Simitone.Client.UI.Panels
 
             for (int i = 0; i < locations.Length; i++)
             {
-                Console.WriteLine(locations.GetString(i));
                 var loc = locations.GetString(i).Split(',');
                 var num = int.Parse(loc[0].TrimStart());
                 var button = new UINeighborhoodHouseButton(num, SelectHouse, config.Scale);
@@ -235,7 +234,7 @@ namespace Simitone.Client.UI.Panels
                 LastHS.OnSelected += (h) =>
                 {
                     OnHouseSelect?.Invoke(h);
-                    HITVM.Get().PlaySoundEvent("bkground_fade");
+                    //HITVM.Get().PlaySoundEvent("bkground_fade");
                 };
             }
         }
@@ -353,7 +352,6 @@ namespace Simitone.Client.UI.Panels
                     switch (evt)
                     {
                         case UIMouseEventType.MouseUp:
-                            Console.WriteLine("mup");
                             HITVM.Get().PlaySoundEvent(FSO.Client.UI.Model.UISounds.NeighborhoodClick);
                             selectionCallback(houseNumber); break;
                         case UIMouseEventType.MouseOver:
@@ -361,7 +359,6 @@ namespace Simitone.Client.UI.Panels
                             HITVM.Get().PlaySoundEvent(FSO.Client.UI.Model.UISounds.NeighborhoodRollover);
                             Hovered = true; break;
                         case UIMouseEventType.MouseOut:
-                            Console.WriteLine("mout");
                             GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "AlphaTime", 0f } });
                             Hovered = false; break;
                     }

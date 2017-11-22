@@ -97,7 +97,7 @@ namespace Simitone.Client
 
             FSO.LotView.WorldConfig.Current = new FSO.LotView.WorldConfig()
             {
-                AdvancedLighting = settings.Lighting,
+                LightingMode = 3,
                 SmoothZoom = settings.SmoothZoom,
                 SurroundingLots = settings.SurroundingLotMode,
                 AA = settings.AntiAlias
@@ -107,8 +107,9 @@ namespace Simitone.Client
             PlatformID pid = os.Platform;
             GameFacade.Linux = (pid == PlatformID.MacOSX || pid == PlatformID.Unix);
 
-            FSO.Content.Content.TS1Hybrid = GlobalSettings.Default.TS1HybridEnable;
+            FSO.Content.Content.Target = FSO.Content.FSOEngineMode.TS1;
             FSO.Content.Content.TS1HybridBasePath = GlobalSettings.Default.TS1HybridPath;
+            if (FSOEnvironment.Enable3D) FSO.Files.RC.DGRP3DMesh.InitRCWorkers();
             //FSO.Content.Content.Init(GlobalSettings.Default.StartupPath, GraphicsDevice);
             base.Initialize();
 
@@ -121,7 +122,7 @@ namespace Simitone.Client
             GameFacade.GraphicsDevice = GraphicsDevice;
             GameFacade.GraphicsDeviceManager = Graphics;
             GameFacade.Cursor = new CursorManager(GraphicsDevice);
-            if (!GameFacade.Linux) GameFacade.Cursor.Init(GlobalSettings.Default.StartupPath);
+            if (!GameFacade.Linux) GameFacade.Cursor.Init(GlobalSettings.Default.TS1HybridPath, true);
 
             /** Init any computed values **/
             GameFacade.Init();
@@ -134,6 +135,7 @@ namespace Simitone.Client
             hit.SetMasterVolume(HITVolumeGroup.VOX, GlobalSettings.Default.VoxVolume / 10f);
             hit.SetMasterVolume(HITVolumeGroup.AMBIENCE, GlobalSettings.Default.AmbienceVolume / 10f);
 
+            ContentStrings.TS1 = true;
             GameFacade.Strings = new ContentStrings();
 
             GraphicsDevice.RasterizerState = new RasterizerState() { CullMode = CullMode.None };
@@ -193,7 +195,6 @@ namespace Simitone.Client
         /// </summary>
         protected override void LoadContent()
         {
-            Console.WriteLine("loadcontent");
             Effect vitaboyEffect = null;
             try
             {
@@ -227,6 +228,13 @@ namespace Simitone.Client
         protected override void UnloadContent()
         {
             // TODO: Unload any non ContentManager content here
+        }
+
+        protected override void OnExiting(object sender, EventArgs args)
+        {
+            base.OnExiting(sender, args);
+            GameThread.Killed = true;
+            GameThread.OnKilled.Set();
         }
 
         /// <summary>

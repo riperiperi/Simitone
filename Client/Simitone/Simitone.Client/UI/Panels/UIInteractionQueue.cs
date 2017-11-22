@@ -14,7 +14,6 @@ using FSO.SimAntics.Engine;
 using FSO.SimAntics;
 using FSO.HIT;
 using FSO.SimAntics.NetPlay.Model.Commands;
-using FSO.Client.UI.Controls;
 using FSO.Common;
 using Simitone.Client.UI.Controls;
 using FSO.Client;
@@ -140,7 +139,7 @@ namespace Simitone.Client.UI.Panels
                             Active = (i == 0)
                         };
                         itemui.UI.Position = itemui.SourcePos;
-                        itemui.UI.OnMouseEvent += new ButtonClickDelegate(InteractionClicked);
+                        itemui.UI.OnMouseEvent += new FSO.Client.UI.Controls.ButtonClickDelegate(InteractionClicked);
                         itemui.UI.OnInteractionResult += InteractionResult;
                         itemui.UI.ParentEntry = itemui;
                         itemui.Name = elem.Name;

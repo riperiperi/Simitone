@@ -191,7 +191,8 @@ namespace Simitone.Client.UI.Panels
                         ScrollVelocity = (newTap - TapPoint).ToVector2();
                         TapPoint = newTap;
 
-                        Master.TargetZoom = (vector.Length() / BaseVector.Length()) * StartScale;
+                        var zoom = (vector.Length() / BaseVector.Length()) * StartScale;
+                        if (!float.IsNaN(zoom))Master.TargetZoom = zoom;
 
                         //clockwise if dot product b against a rotated 90 degrees clockwise is positive
                         var a = BaseVector;
@@ -203,8 +204,16 @@ namespace Simitone.Client.UI.Panels
 
                         if (_3d)
                         {
-                            if (LastAngleX != null) ((WorldStateRC)Master.World.State).RotationX -= (float)DirectionUtils.Difference(RotateAngle, LastAngleX.Value);
+                            var rcState = ((WorldStateRC)Master.World.State);
+                            if (LastAngleX != null)
+                            {
+                                float rot = rcState.RotationX - (float)DirectionUtils.Difference(RotateAngle, LastAngleX.Value);
+                                if (!float.IsNaN(rot))
+                                    rcState.RotationX = rot;
+                            }
                             LastAngleX = RotateAngle;
+                            rcState.RotationY += ScrollVelocity.Y / 200;
+                            ScrollVelocity = Vector2.Zero;
                         } else { 
                             if (Math.Abs(RotateAngle) > Math.PI / 8) Master.TargetZoom = StartScale;
                         }

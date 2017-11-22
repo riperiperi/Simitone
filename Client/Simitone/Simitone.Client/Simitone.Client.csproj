@@ -59,12 +59,19 @@
     <Compile Include="UI\Controls\UIValueBar.cs" />
     <Compile Include="UI\Model\UIIconCache.cs" />
     <Compile Include="UI\Model\UIStyle.cs" />
+    <Compile Include="UI\Panels\CAS\UIFamilyCASPanel.cs" />
+    <Compile Include="UI\Panels\CAS\UISimCASPanel.cs" />
+    <Compile Include="UI\Panels\LiveSubpanels\Catalog\UICatalogItem.cs" />
+    <Compile Include="UI\Panels\LiveSubpanels\UIButtonSubpanel.cs" />
+    <Compile Include="UI\Panels\LiveSubpanels\UIBuyBrowsePanel.cs" />
     <Compile Include="UI\Panels\LiveSubpanels\UIRelationshipSubpanel.cs" />
     <Compile Include="UI\Panels\LiveSubpanels\UIInventorySubpanel.cs" />
     <Compile Include="UI\Panels\LiveSubpanels\UIPersonalitySubpanel.cs" />
     <Compile Include="UI\Panels\LiveSubpanels\UIJobSubpanel.cs" />
     <Compile Include="UI\Panels\LiveSubpanels\UIMotiveSubpanel.cs" />
     <Compile Include="UI\Panels\LiveSubpanels\UISubpanel.cs" />
+    <Compile Include="UI\Panels\LotControls\UIArchTouchHelper.cs" />
+    <Compile Include="UI\Panels\UI3DThumb.cs" />
     <Compile Include="UI\Panels\UIClockPanel.cs" />
     <Compile Include="UI\Panels\UICutawayPanel.cs" />
     <Compile Include="UI\Panels\UIHouseSelectPanel.cs" />
@@ -73,16 +80,22 @@
     <Compile Include="UI\Panels\UILotControl.cs" />
     <Compile Include="UI\Panels\UILotControlTouchHelper.cs" />
     <Compile Include="UI\Panels\UIMobileAlert.cs" />
+    <Compile Include="UI\Panels\UIModeSwitcher.cs" />
     <Compile Include="UI\Panels\UIMoneyPanel.cs" />
     <Compile Include="UI\Panels\UINeighbourhoodSelectionPanel.cs" />
     <Compile Include="UI\Panels\UIMainPanel.cs" />
+    <Compile Include="UI\Panels\UINeighbourhoodSwitcher.cs" />
+    <Compile Include="UI\Panels\UIObjectHolder.cs" />
+    <Compile Include="UI\Panels\UIPickupPanel.cs" />
     <Compile Include="UI\Panels\UIPieMenu.cs" />
+    <Compile Include="UI\Panels\UIQueryPanel.cs" />
     <Compile Include="UI\Panels\UIRotationAnimation.cs" />
     <Compile Include="UI\Panels\UISimitoneFrontend.cs" />
     <Compile Include="UI\Panels\UISwitchAvatarPanel.cs" />
     <Compile Include="UI\Panels\WorldUI\UIHeadlineRenderer.cs" />
     <Compile Include="UI\Panels\WorldUI\UIMoneyHeadline.cs" />
     <Compile Include="UI\Screens\LoadingGameScreen.cs" />
+    <Compile Include="UI\Screens\TS1CASScreen.cs" />
     <Compile Include="UI\Screens\TS1GameScreen.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -132,10 +145,106 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\uigraphics\cas\cas_adult.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_bio.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_bio_bg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_cat_del.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_cat_edit.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_child.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_female.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_male.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_new_plus.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_per.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_rand.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_sim.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_skindrk.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_skinlgt.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\cas\cas_skinmed.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\common\btn_accept.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\common\btn_back.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\uigraphics\dialog\ngbh_outline.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\uigraphics\live\blank_blue.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_arch.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_door.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_fire.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_flor.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_objs.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_outs.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_roof.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_stai.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_terr.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_tree.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_wall.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_walp.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_watr.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_build_wind.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\cat\cat_cancel.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\uigraphics\live\cat_btn_base.png">
@@ -273,6 +382,9 @@
     <Content Include="Content\uigraphics\live\cat\cat_surf_tabl.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\uigraphics\live\cat_thumb_bg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\uigraphics\live\clockinbg_pause.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -381,6 +493,15 @@
     <Content Include="Content\uigraphics\live\modes\live_relationships.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\uigraphics\live\modes\opt_neigh.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\modes\opt_quit.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\modes\opt_save.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\uigraphics\live\money_bg.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -429,6 +550,9 @@
     <Content Include="Content\uigraphics\live\pswitch_icon_sel.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\uigraphics\live\query_title.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\uigraphics\live\rel_all.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -471,6 +595,30 @@
     <Content Include="Content\uigraphics\live\speedbtn_4.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\uigraphics\live\touch\touch_buy.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\touch\touch_cross.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\touch\touch_place.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\touch\touch_rotccw.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\touch\touch_rotcw.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\touch\touch_tool.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\touch\touch_toolc.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\touch\touch_tools.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\uigraphics\load\load_bar_bg.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -489,6 +637,27 @@
     <Content Include="Content\uigraphics\live\motive_bg.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\uigraphics\ngbh\ngbh_back.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\ngbh\ngbh_cas.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\ngbh\ngbh_downt.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\ngbh\ngbh_magic.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\ngbh\ngbh_opt.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\ngbh\ngbh_studio.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\ngbh\ngbh_vacat.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\TS1Patch\PetGym_performance.piff">
@@ -505,6 +674,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\TS1Patch\NPC_Unleashed_SaxPlayer_infinite_loop.piff">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Content\cas.fsov">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

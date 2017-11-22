@@ -4,7 +4,9 @@ using FSO.LotView;
 using Simitone.Client;
 using Simitone.Windows.GameLocator;
 using System;
+using System.IO;
 using System.Threading;
+using System.Windows.Forms;
 
 namespace Simitone.Windows
 {
@@ -27,6 +29,7 @@ namespace Simitone.Windows
 
             if (useDX) GlobalSettings.Default.AntiAlias = false;
 
+            FSOEnvironment.Enable3D = false;
             bool ide = false;
             #region User resolution parmeters
 
@@ -65,6 +68,8 @@ namespace Simitone.Windows
             {
                 FSOEnvironment.ContentDir = "Content/";
                 FSOEnvironment.GFXContentDir = "Content/" + (useDX ? "DX/" : "OGL/");
+                FSOEnvironment.UserDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Simitone/").Replace('\\', '/');
+                Directory.CreateDirectory(FSOEnvironment.UserDir);
                 FSOEnvironment.Linux = false;
                 FSOEnvironment.DirectX = useDX;
                 FSOEnvironment.GameThread = Thread.CurrentThread;
@@ -83,9 +88,16 @@ namespace Simitone.Windows
                 if (ide) new FSO.IDE.VolcanicStartProxy().InitVolcanic();
 
                 SimitoneGame game = new SimitoneGame();
+                var form = (Form)Form.FromHandle(game.Window.Handle);
+                if (form != null) form.FormClosing += Form_FormClosing;
                 game.Run();
                 game.Dispose();
             }
+        }
+
+        private static void Form_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            e.Cancel = !(GameFacade.Screens.CurrentUIScreen?.CloseAttempt() ?? true);
         }
     }
 #endif

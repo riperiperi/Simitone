@@ -28,14 +28,31 @@ namespace Simitone.Client
                 GameFacade.Screens.RemoveCurrent();
                 GameFacade.Screens.AddScreen(screen);
 
-                ((LoadingScreen)last).Close();
-                var children = new List<UIElement>(last.GetChildren());
-                for (int i=0; i<children.Count; i++)
+                var load = (last as LoadingScreen);
+
+                if (load != null)
                 {
-                    last.Remove(children[i]);
-                    screen.Add(children[i]);
+                    load.Close();
+                    var children = new List<UIElement>(last.GetChildren());
+                    for (int i = 0; i < children.Count; i++)
+                    {
+                        last.Remove(children[i]);
+                        screen.Add(children[i]);
+                    }
                 }
                 screen.Initialize(lotName, external);
+            });
+        }
+
+        public static void EnterCAS()
+        {
+            GameThread.NextUpdate((x) =>
+            {
+                var screen = new TS1CASScreen();
+                var last = GameFacade.Screens.CurrentUIScreen;
+                if (last is TS1GameScreen) ((TS1GameScreen)last).CleanupLastWorld();
+                GameFacade.Screens.RemoveCurrent();
+                GameFacade.Screens.AddScreen(screen);
             });
         }
     }
