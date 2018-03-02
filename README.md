@@ -3,7 +3,7 @@
 Alternative C# Windows Frontend for The Sims 1, based off of FreeSO. http://freeso.org 
 (***REQUIRES*** a legitimate copy of The Sims: Complete Collection)
 
-Currently does not support saving, build/buy, the entire Fame carrer track and a few other important things.
+Currently does not support saving, build/buy, the entire Fame career track and a few other important things.
 
 *Only for Desktop Windows.* Other platforms cannot be supported.
 
