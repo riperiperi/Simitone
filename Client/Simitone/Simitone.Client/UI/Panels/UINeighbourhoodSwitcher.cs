@@ -17,25 +17,33 @@ namespace Simitone.Client.UI.Panels
         public List<UIElasticButton> RightBtns = new List<UIElasticButton>();
         private UINeighborhoodSelectionPanel Panel;
         private ushort Mode;
+        public bool MoveInMode;
 
-        public UINeighbourhoodSwitcher(UINeighborhoodSelectionPanel panel, ushort mode)
+        public UINeighbourhoodSwitcher(UINeighborhoodSelectionPanel panel, ushort mode, bool moveIn)
         {
             Panel = panel;
-            SetMode(mode);
+            SetMode(mode, moveIn);
         }
 
-        public void SetMode(ushort mode)
+        public void SetMode(ushort mode, bool moveIn)
         {
+            MoveInMode = moveIn;
             foreach (var btn in LeftBtns) Remove(btn);
             foreach (var btn in RightBtns) Remove(btn);
             LeftBtns.Clear(); RightBtns.Clear();
 
-            AddBtn(LeftBtns, "ngbh_cas.png", (btn) => GameController.EnterCAS());
+            AddBtn(LeftBtns, "ngbh_cas.png", (btn) =>
+            {
+                var transition = new UITransDialog("cas", () =>
+                {
+                    GameController.EnterCAS();
+                });
+            });
             if (mode != 4) AddBtn(LeftBtns, "ngbh_back.png", (btn) => PopMode(4));
 
-            if (mode != 2) AddBtn(RightBtns, "ngbh_downt.png", (btn) => PopMode(2));
-            if (mode != 3) AddBtn(RightBtns, "ngbh_vacat.png", (btn) => PopMode(3));
-            if (mode != 5) AddBtn(RightBtns, "ngbh_studio.png", (btn) => PopMode(5));
+            if (mode != 2 && !moveIn) AddBtn(RightBtns, "ngbh_downt.png", (btn) => PopMode(2));
+            if (mode != 3 && !moveIn) AddBtn(RightBtns, "ngbh_vacat.png", (btn) => PopMode(3));
+            if (mode != 5 && !moveIn) AddBtn(RightBtns, "ngbh_studio.png", (btn) => PopMode(5));
             if (mode != 7) AddBtn(RightBtns, "ngbh_magic.png", (btn) => PopMode(7));
             Mode = mode;
 
@@ -45,7 +53,7 @@ namespace Simitone.Client.UI.Panels
         public void PopMode(ushort mode)
         {
             Panel.PopulateScreen(mode);
-            SetMode(mode);
+            SetMode(mode, MoveInMode);
         }
 
         private void LayBtns()

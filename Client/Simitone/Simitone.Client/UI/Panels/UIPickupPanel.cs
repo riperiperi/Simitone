@@ -17,6 +17,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FSO.Common.Rendering.Framework.Model;
 using FSO.Common.Rendering.Framework.IO;
+using FSO.UI.Panels;
 
 namespace Simitone.Client.UI.Panels
 {

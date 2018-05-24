@@ -20,6 +20,7 @@ namespace Simitone.Client.UI.Controls
         public Texture2D ScrollEdgeR;
         public bool DrawBounds = true;
         public int Margin;
+        public bool VerticalMode;
 
         private UIMouseEventRef HitTest;
 
@@ -86,9 +87,19 @@ namespace Simitone.Client.UI.Controls
             }
         }
 
+        private int GetPAxis(Point p)
+        {
+            return (VerticalMode) ? p.Y : p.X;
+        }
+
+        private float GetPAxis(Vector2 p)
+        {
+            return (VerticalMode) ? p.Y : p.X;
+        }
+
         public void Select(Point at)
         {
-            var item = (int)(at.X + Scroll) / ItemWidth;
+            var item = (int)(GetPAxis(at) + Scroll) / ItemWidth;
             if (item >= LengthProvider()) return;
             var rItem = GetOrPrepare(item);
             if (rItem != null)
@@ -107,6 +118,11 @@ namespace Simitone.Client.UI.Controls
                 item = ElemProvider(id);
                 item.Visible = false;
                 item.ItemID = id;
+                if (id == LastSelected?.ItemID)
+                {
+                    item.Selected();
+                    LastSelected = item;
+                }
                 Add(item);
             }
             return item;
@@ -133,11 +149,11 @@ namespace Simitone.Client.UI.Controls
                     var pos = lastMouse.MouseState.Position;
                     if (!InScroll)
                     {
-                        if (Math.Abs((pos - MouseDownAt).X) > 25) InScroll = true;
+                        if (Math.Abs(GetPAxis(pos - MouseDownAt)) > 25) InScroll = true;
                     }
                     if (InScroll)
                     {
-                        ScrollVelocity = -(pos - MouseDownAt).X;
+                        ScrollVelocity = -GetPAxis(pos - MouseDownAt);
                         MouseDownAt = pos;
                     }
                 }
@@ -148,7 +164,7 @@ namespace Simitone.Client.UI.Controls
 
             Scroll += ScrollVelocity;
             ScrollVelocity *= 0.9f;
-            Scroll = Math.Max(-Margin, Math.Min(length * ItemWidth - Size.X + Margin, Scroll));
+            Scroll = Math.Max(-Margin, Math.Min(length * ItemWidth - GetPAxis(Size) + Margin, Scroll));
 
             //update children positions.
             //delete ones that are not 
@@ -156,14 +172,15 @@ namespace Simitone.Client.UI.Controls
             var untouched = new HashSet<UIElement>(Children);
 
             var b = (int)(Scroll / ItemWidth);
-            var e = b + (Size.X + (ItemWidth - 1)) / ItemWidth;
+            var e = b + (GetPAxis(Size) + (ItemWidth - 1)) / ItemWidth;
             for (int i=b; i<e; i++)
             {
                 if (i < 0) continue;
                 if (i >= length) break;
                 var item = GetOrPrepare(i);
                 untouched.Remove(item);
-                item.X = i * ItemWidth - Scroll;
+                if (VerticalMode) item.Y = i * ItemWidth - Scroll;
+                else item.X = i * ItemWidth - Scroll;
                 item.Visible = true;
             }
 
@@ -182,11 +199,20 @@ namespace Simitone.Client.UI.Controls
 
         public override void Draw(UISpriteBatch batch)
         {
+            if (!Visible) return;
             base.Draw(batch);
             if (DrawBounds)
             {
-                DrawLocalTexture(batch, ScrollEdgeL, new Vector2(0, Size.Y / 2 - 64));
-                DrawLocalTexture(batch, ScrollEdgeR, new Vector2(Size.X - 15, Size.Y / 2 - 64));
+                if (VerticalMode)
+                {
+                    DrawLocalTexture(batch, ScrollEdgeL, null, new Vector2(Size.X / 2 - 64, 0), Vector2.One, Color.White, (float)Math.PI/2f, new Vector2(0, ScrollEdgeL.Height));
+                    DrawLocalTexture(batch, ScrollEdgeR, null, new Vector2(Size.X / 2 - 64, Size.Y - 15), Vector2.One, Color.White, (float)Math.PI / 2f, new Vector2(0, ScrollEdgeL.Height));
+                }
+                else
+                {
+                    DrawLocalTexture(batch, ScrollEdgeL, new Vector2(0, Size.Y / 2 - 64));
+                    DrawLocalTexture(batch, ScrollEdgeR, new Vector2(Size.X - 15, Size.Y / 2 - 64));
+                }
             }
         }
 

@@ -99,6 +99,12 @@ namespace Simitone.Client.UI.Panels
             RefreshSize();
         }
 
+        public override void GameResized()
+        {
+            base.GameResized();
+            RefreshSize();
+        }
+
         public void RefreshSize()
         {
             var w = Width;
@@ -123,20 +129,54 @@ namespace Simitone.Client.UI.Panels
                 h += 45;
             }
 
-            var btnX = (w - ((Buttons.Count-1) * 350)) / 2;
-            var btnY = h - 125;
-            foreach (UIButton button in Buttons)
-            {
-                button.Y = btnY;
-                button.X = btnX - button.Width/2;
-                btnX += 350;
-            }
+            h = ResetButtons(h, true);
 
             if (Height != h)
             {
                 SetHeight(h);
             }
             //update bg with height
+        }
+
+        private int ResetButtons(int h, bool setY)
+        {
+            var btnX = Width/2;
+            var btnY = h - 125;
+            var totalBtnWidth = Buttons.Sum(x => x.Width);
+            int runningWidth = 0;
+            int start = 0;
+            int i = 0;
+            for (i=0; i<Buttons.Count; i++)
+            {
+                var btn = Buttons[i];
+                
+                if (runningWidth == 0 || (Width-50) - runningWidth > btn.Width)
+                {
+                    btn.X = btnX + runningWidth;
+                } else
+                {
+                    btnY += 120;
+                    h += 120;
+                    //center buttons
+                    runningWidth -= 25;
+                    for (int j=start; j<i; j++)
+                    {
+                        Buttons[j].X -= runningWidth / 2;
+                    }
+
+                    runningWidth = 0;
+                    start = i;
+                    btn.X = btnX + runningWidth;
+                }
+                runningWidth += (int)btn.Width + 25;
+                if (setY) btn.Y = btnY;
+            }
+            runningWidth -= 25;
+            for (int j = start; j < i; j++)
+            {
+                Buttons[j].X -= runningWidth / 2;
+            }
+            return h;
         }
 
         private float TargetIX;
@@ -226,12 +266,11 @@ namespace Simitone.Client.UI.Panels
             {
                 Icon.Visible = true;
                 Icon.X = newIX;
-                var btnX = (Width - ((Buttons.Count - 1) * 350)) / 2;
-                foreach (UIButton button in Buttons)
+                ResetButtons(Height, false);
+                foreach (var btn in Buttons)
                 {
-                    button.X = off + btnX - button.Width / 2;
-                    button.Visible = true;
-                    btnX += 350;
+                    btn.X += off;
+                    btn.Visible = true;
                 }
             }
         }

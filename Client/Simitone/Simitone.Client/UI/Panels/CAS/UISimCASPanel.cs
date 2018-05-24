@@ -369,7 +369,7 @@ namespace Simitone.Client.UI.Panels.CAS
             if (MouseOn)
             {
                 //how much allowance do we have on this specifically
-                var allowance = CAS.AllowedPoints - (CAS.TotalPoints - Points);
+                var allowance = Math.Min(10, CAS.AllowedPoints - (CAS.TotalPoints - Points));
                 var newPTs = Math.Max(0, Math.Min(allowance, (int)Math.Ceiling(GlobalPoint(state.MouseState.Position.ToVector2()).X / 24)));
                 if (newPTs != Points)
                 {

@@ -24,7 +24,7 @@ namespace Simitone.Windows
         {
             var gameLocator = new WindowsLocator();
 
-            var useDX = false;
+            var useDX = true;
             var path = gameLocator.FindTheSimsOnline();
 
             if (useDX) GlobalSettings.Default.AntiAlias = false;

@@ -87,7 +87,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
             if (sel == null) return;
             var neighbourhood = Content.Get().Neighborhood;
             var neighbour = sel.GetPersonData(VMPersonDataVariable.NeighborId);
-            var inventory = neighbourhood.GetInventoryByNID(neighbour).Where(x => (CatSort == -1 && !HiddenCats.Contains(x.Type)) || CatSort == x.Type).ToList();
+            var inventory = neighbourhood.GetInventoryByNID(neighbour)?.Where(x => (CatSort == -1 && !HiddenCats.Contains(x.Type)) || CatSort == x.Type)?.ToList() ?? new List<InventoryItem>();
 
             bool difference = false;
             if (inventory.Count == Items.Count)

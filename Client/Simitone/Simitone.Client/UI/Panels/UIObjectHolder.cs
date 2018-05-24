@@ -117,7 +117,7 @@ namespace Simitone.Client.UI.Panels
             //rotate through to try all configurations
             var dir = Holding.Dir;
             VMPlacementError status = VMPlacementError.Success;
-            if (!Holding.IsBought && !vm.TSOState.CanPlaceNewUserObject(vm)) status = VMPlacementError.TooManyObjectsOnTheLot;
+            if (!Holding.IsBought && !vm.PlatformState.CanPlaceNewUserObject(vm)) status = VMPlacementError.TooManyObjectsOnTheLot;
             else
             {
                 for (int i = 0; i < 4; i++)
@@ -164,7 +164,7 @@ namespace Simitone.Client.UI.Panels
 
                 if (UseNet || !Holding.IsBought)
                 {
-                    Holding.Group.Delete(vm.Context);
+                    RecursiveDelete(vm.Context, Holding.Group.BaseObject);
                 } else
                 {
                     if (Holding.RealEnt == null) Holding.RealEnt = Holding.Group.BaseObject;
@@ -180,6 +180,27 @@ namespace Simitone.Client.UI.Panels
             }
             Holding = null;
             vm.Tick();
+        }
+
+        private void RecursiveDelete(VMContext context, VMEntity real)
+        {
+            var rgrp = real.MultitileGroup;
+            for (int i = 0; i < rgrp.Objects.Count; i++)
+            {
+                var slots = rgrp.Objects[i].TotalSlots();
+                var objs = new List<VMEntity>();
+                for (int j = 0; j < slots; j++)
+                {
+                    var slot = rgrp.Objects[i].GetSlot(j);
+                    if (slot != null)
+                    {
+                        objs.Add(slot);
+                    }
+
+                }
+                foreach (var obj in objs) RecursiveDelete(context, obj);
+            }
+            rgrp.Delete(context);
         }
 
         public void MouseDown(UpdateState state)
@@ -357,7 +378,7 @@ namespace Simitone.Client.UI.Panels
                     {
                         MoveSelected(Holding.TilePos, Holding.Level);
                         if (!Holding.IsBought && Holding.CanPlace == VMPlacementError.Success &&
-                            ParentControl.ActiveEntity != null && ParentControl.ActiveEntity.TSOState.Budget.Value < Holding.Price)
+                            ParentControl.ActiveEntity != null && ParentControl.Budget < Holding.Price)
                             Holding.CanPlace = VMPlacementError.InsufficientFunds;
                         if (Holding.CanPlace != VMPlacementError.Success)
                         {
@@ -390,7 +411,7 @@ namespace Simitone.Client.UI.Panels
             else if (MouseClicked)
             {
                 //not holding an object, but one can be selected
-                var newHover = World.GetObjectIDAtScreenPos(state.MouseState.X / FSOEnvironment.DPIScaleFactor, state.MouseState.Y / FSOEnvironment.DPIScaleFactor, GameFacade.GraphicsDevice);
+                var newHover = World.GetObjectIDAtScreenPos(state.MouseState.X, state.MouseState.Y, GameFacade.GraphicsDevice);
                 if (MouseClicked && (newHover != 0) && (vm.GetObjectById(newHover) is VMGameObject))
                 {
                     var objGroup = vm.GetObjectById(newHover).MultitileGroup;

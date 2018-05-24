@@ -69,7 +69,7 @@ namespace Simitone.Client.UI.Controls
         public override void Draw(UISpriteBatch SBatch)
         {
             if (!Visible) return;
-            DrawLocalTexture(SBatch, Texture, new Vector2(Texture.Width, Texture.Height) / -2);
+            DrawLocalTexture(SBatch, Texture, null, new Vector2(Texture.Width, Texture.Height) / -2, Vector2.One, Color.White * (Disabled?0.5f:1f));
         }
     }
 }

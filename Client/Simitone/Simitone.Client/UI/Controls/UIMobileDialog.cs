@@ -90,6 +90,15 @@ namespace Simitone.Client.UI.Controls
             GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "InterpolatedAnimation", 1f} }, TweenQuad.EaseOut);
         }
 
+        public override void GameResized()
+        {
+            base.GameResized();
+            TitleBg.SetSize(Width, 70);
+            Width = GameFacade.Screens.CurrentUIScreen.ScreenWidth;
+            ScrHeight = GameFacade.Screens.CurrentUIScreen.ScreenHeight;
+            InterpolatedAnimation = InterpolatedAnimation;
+        }
+
         public void Close()
         {
             if (!Closing)

@@ -42,5 +42,7 @@ namespace Simitone.Client.UI.Model
         public Color SkillInactive = new Color(99, 109, 242, 255);
         public Color SkillActive = new Color(0, 255, 255, 255);
         public Color SkillNeeded = new Color(255, 191, 0, 255);
+
+        public Color TransColor = new Color(0, 41, 69, 255);
     }
 }

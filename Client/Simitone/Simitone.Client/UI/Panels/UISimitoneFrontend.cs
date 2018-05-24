@@ -12,6 +12,10 @@ using FSO.Client;
 using Microsoft.Xna.Framework;
 using Simitone.Client.UI.Panels.LiveSubpanels;
 using FSO.Client.UI.Model;
+using Microsoft.Xna.Framework.Input;
+using FSO.SimAntics;
+using FSO.SimAntics.NetPlay.Model.Commands;
+using FSO.HIT;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -198,6 +202,22 @@ namespace Simitone.Client.UI.Panels
         public float ClockTween;
         public override void Update(UpdateState state)
         {
+            if (state.NewKeys.Contains(Keys.Space))
+            {
+                var selected = Game.LotControl.ActiveEntity;
+                var familyMembers = Game.vm.Context.ObjectQueries.Avatars.Where(x => 
+                    ((VMAvatar)x).GetPersonData(
+                        FSO.SimAntics.Model.VMPersonDataVariable.TS1FamilyNumber) == (Game.vm.TS1State.CurrentFamily?.ChunkID)
+                        ).ToList();
+                var index = familyMembers.IndexOf(selected);
+                if (familyMembers.Count > 0)
+                {
+                    index = (index + 1) % (familyMembers.Count);
+                    HITVM.Get().PlaySoundEvent(UISounds.QueueAdd);
+                    Game.vm.SendCommand(new VMNetChangeControlCmd() { TargetID = familyMembers[index].ObjectID });
+                }
+            }
+
             base.Update(state);
             if (LastCut != Game.LotControl.WallsMode)
             {

@@ -8,19 +8,24 @@ using FSO.Common;
 using FSO.Common.Rendering.Framework;
 using FSO.Common.Utils;
 using FSO.Content;
+using FSO.Files.Formats.IFF;
 using FSO.Files.Formats.IFF.Chunks;
+using FSO.Files.RC;
 using FSO.HIT;
 using FSO.LotView;
 using FSO.SimAntics;
 using FSO.SimAntics.Engine.TSOTransaction;
 using FSO.SimAntics.Marshals;
+using FSO.SimAntics.Model;
 using FSO.SimAntics.NetPlay;
 using FSO.SimAntics.NetPlay.Drivers;
 using FSO.SimAntics.NetPlay.Model;
 using FSO.SimAntics.NetPlay.Model.Commands;
 using FSO.SimAntics.Utils;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Simitone.Client.UI.Controls;
 using Simitone.Client.UI.Panels;
 using Simitone.Client.UI.Panels.WorldUI;
 using System;
@@ -37,7 +42,7 @@ namespace Simitone.Client.UI.Screens
         public UIContainer WindowContainer;
         public bool Downtown;
 
-        public UILotControl LotControl { get; set; } 
+        public UILotControl LotControl { get; set; }
         public UISimitoneFrontend Frontend { get; set; }
         private FSO.LotView.World World;
         public FSO.SimAntics.VM vm { get; set; }
@@ -163,7 +168,7 @@ namespace Simitone.Client.UI.Screens
             }
         }
 
-        public TS1GameScreen() : base()
+        public TS1GameScreen(NeighSelectionMode mode) : base()
         {
             Bg = new UISimitoneBg();
             Bg.Position = (new Vector2(ScreenWidth, ScreenHeight)) / 2;
@@ -174,23 +179,72 @@ namespace Simitone.Client.UI.Screens
 
             if (Content.Get().TS1)
             {
-                NeighSelection();
+                NeighSelection(mode);
             }
         }
+        public int? MoveInFamily;
 
-        public void NeighSelection()
+        public void StartMoveIn(int familyID)
         {
-            TS1NeighPanel = new UINeighborhoodSelectionPanel(4);
-            var switcher = new UINeighbourhoodSwitcher(TS1NeighPanel, 4);
+            MoveInFamily = familyID;
+        }
+
+        public void NeighSelection(NeighSelectionMode mode)
+        {
+            var nbd = (ushort)((mode == NeighSelectionMode.MoveInMagic) ? 7 : 4);
+            TS1NeighPanel = new UINeighborhoodSelectionPanel(nbd);
+            var switcher = new UINeighbourhoodSwitcher(TS1NeighPanel, nbd, mode != NeighSelectionMode.Normal);
             TS1NeighPanel.OnHouseSelect += (house) =>
             {
-                ActiveFamily = Content.Get().Neighborhood.GetFamilyForHouse((short)house);
-                InitializeLot(Path.Combine(FSOEnvironment.UserDir, "UserData/Houses/House" + house.ToString().PadLeft(2, '0') + ".iff"), false);// "UserData/Houses/House21.iff"
-                Remove(TS1NeighPanel);
-                Remove(switcher);
+                if (MoveInFamily != null)
+                {
+                    //move them in first
+                    //confirm it
+                    UIMobileAlert confirmDialog = null;
+                    confirmDialog = new UIMobileAlert(new UIAlertOptions()
+                    {
+                        Title = GameFacade.Strings.GetString("132", "0"),
+                        Message = GameFacade.Strings.GetString("132", "1"),
+                        Buttons = UIAlertButton.YesNo((b) =>
+                        {
+                            confirmDialog.Close();
+                            MoveInAndPlay((short)house, MoveInFamily.Value, switcher);
+                        },
+                        (b) => confirmDialog.Close())
+                    });
+                    UIScreen.GlobalShowDialog(confirmDialog, true);
+                }
+                else
+                {
+                    PlayHouse((short)house, switcher);
+                }
             };
             Add(TS1NeighPanel);
             Add(switcher);
+        }
+
+        public void PlayHouse(short house, UIElement switcher)
+        {
+            ActiveFamily = Content.Get().Neighborhood.GetFamilyForHouse((short)house);
+            InitializeLot(Content.Get().Neighborhood.GetHousePath(house), false);// "UserData/Houses/House21.iff"
+            Remove(TS1NeighPanel);
+            if (switcher != null) Remove(switcher);
+        }
+
+        public void MoveInAndPlay(short house, int family, UIElement switcher)
+        {
+            var neigh = Content.Get().Neighborhood;
+            var fami = neigh.GetFamily((ushort)family);
+            neigh.SetFamilyForHouse(house, fami, true);
+            PlayHouse(house, switcher);
+        }
+
+        public void EvictLot(FAMI family, short houseID)
+        {
+            family.Budget += family.ValueInArch;
+            family.ValueInArch = 0;
+            Content.Get().Neighborhood.MoveOut(houseID);
+            TS1NeighPanel.SelectHouse(houseID);
         }
 
         public override void GameResized()
@@ -284,9 +338,9 @@ namespace Simitone.Client.UI.Screens
             GameFacade.Game.IsMouseVisible = Visible;
 
             base.Update(state);
-            if (state.NewKeys.Contains(Keys.NumPad1)) ChangeSpeedTo(1);
-            if (state.NewKeys.Contains(Keys.NumPad2)) ChangeSpeedTo(2);
-            if (state.NewKeys.Contains(Keys.NumPad3)) ChangeSpeedTo(3);
+            if (state.NewKeys.Contains(Keys.D1)) ChangeSpeedTo(1);
+            if (state.NewKeys.Contains(Keys.D2)) ChangeSpeedTo(2);
+            if (state.NewKeys.Contains(Keys.D3)) ChangeSpeedTo(3);
             if (state.NewKeys.Contains(Keys.P)) ChangeSpeedTo(0);
 
             if (World != null)
@@ -306,7 +360,7 @@ namespace Simitone.Client.UI.Screens
                 else
                 {
                     Downtown = true;
-                    InitializeLot(Path.Combine(Content.Get().TS1BasePath, "UserData/Houses/House" + SwitchLot.ToString().PadLeft(2, '0') + ".iff"), false);
+                    InitializeLot(Content.Get().Neighborhood.GetHousePath(SwitchLot), false);
                 }
                 SwitchLot = -1;
             }
@@ -329,7 +383,6 @@ namespace Simitone.Client.UI.Screens
             //clear our cache too, if the setting lets us do that
             TimedReferenceController.Clear();
             TimedReferenceController.Clear();
-            VM.ClearAssembled();
 
             if (ZoomLevel < 4) ZoomLevel = 5;
             vm.Context.Ambience.Kill();
@@ -401,15 +454,15 @@ namespace Simitone.Client.UI.Screens
         public void InitializeLot(VMMarshal marshal)
         {
             InitializeLot();
-            vm.MyUID = 1;
+            vm.MyUID = uint.MaxValue;
             vm.Load(marshal);
 
-            vm.ActivateFamily(ActiveFamily);
+            vm.TS1State.ActivateFamily(vm, ActiveFamily);
 
             var settings = GlobalSettings.Default;
             var myClient = new VMNetClient
             {
-                PersistID = 1,
+                PersistID = uint.MaxValue,
                 RemoteIP = "local",
                 AvatarState = new VMNetAvatarPersistState()
                 {
@@ -417,7 +470,7 @@ namespace Simitone.Client.UI.Screens
                     DefaultSuits = new VMAvatarDefaultSuits(settings.DebugGender),
                     BodyOutfit = settings.DebugBody,
                     HeadOutfit = settings.DebugHead,
-                    PersistID = 1,
+                    PersistID = uint.MaxValue,
                     SkinTone = (byte)settings.DebugSkin,
                     Gender = (short)(settings.DebugGender ? 1 : 0),
                     Permissions = FSO.SimAntics.Model.TSOPlatform.VMTSOAvatarPermissions.Admin,
@@ -438,7 +491,7 @@ namespace Simitone.Client.UI.Screens
 
         public void InitializeLot(string lotName, bool external)
         {
-            if (lotName == "") return;
+            if (lotName == "" || lotName[0] == '!') return;
             InitializeLot();
             
             if (!external)
@@ -446,17 +499,15 @@ namespace Simitone.Client.UI.Screens
                 if (!Downtown && ActiveFamily != null)
                 {
                     ActiveFamily.SelectWholeFamily();
-                    vm.ActivateFamily(ActiveFamily);
+                    vm.TS1State.ActivateFamily(vm, ActiveFamily);
                 }
-                BlueprintReset(lotName);
+                BlueprintReset(lotName, null);
 
-                vm.TSOState.Size = (10) | (3 << 8);
-                vm.Context.UpdateTSOBuildableArea();
-                vm.MyUID = 1;
+                vm.MyUID = uint.MaxValue;
                 var settings = GlobalSettings.Default;
                 var myClient = new VMNetClient
                 {
-                    PersistID = 1,
+                    PersistID = uint.MaxValue,
                     RemoteIP = "local",
                     AvatarState = new VMNetAvatarPersistState()
                     {
@@ -464,17 +515,36 @@ namespace Simitone.Client.UI.Screens
                         DefaultSuits = new VMAvatarDefaultSuits(settings.DebugGender),
                         BodyOutfit = settings.DebugBody,
                         HeadOutfit = settings.DebugHead,
-                        PersistID = 1,
+                        PersistID = uint.MaxValue,
                         SkinTone = (byte)settings.DebugSkin,
                         Gender = (short)(settings.DebugGender ? 1 : 0),
                         Permissions = FSO.SimAntics.Model.TSOPlatform.VMTSOAvatarPermissions.Admin,
                         Budget = 1000000
                     }
-
                 };
+
+                if (Downtown)
+                {
+                    var ngbh = Content.Get().Neighborhood;
+                    var crossData = ngbh.GameState;
+                    var neigh = ngbh.GetNeighborIDForGUID(crossData.DowntownSimGUID);
+                    if (neigh != null) {
+                        var inv = ngbh.GetInventoryByNID(neigh.Value);
+                        if (inv != null) {
+                            var hr = inv.FirstOrDefault(x => x.Type == 2 && x.GUID == 7)?.Count ?? 0;
+                            var min = inv.FirstOrDefault(x => x.Type == 2 && x.GUID == 8)?.Count ?? 0;
+                            Driver.SendCommand(new VMNetSetTimeCmd()
+                            {
+                                Hours = hr,
+                                Minutes = min,
+                            });
+                        }
+                    }
+                }
 
                 var server = (VMServerDriver)Driver;
                 server.ConnectClient(myClient);
+                LoadSurrounding(short.Parse(lotName.Substring(lotName.Length - 6, 2)));
 
                 GameFacade.Cursor.SetCursor(CursorType.Normal);
                 ZoomLevel = 1;
@@ -484,9 +554,48 @@ namespace Simitone.Client.UI.Screens
             this.Add(Frontend);
         }
 
-        public void BlueprintReset(string path)
+        public void LoadSurrounding(short houseID)
+        {
+            return;
+            var surrounding = new NBHm(new OBJ(File.OpenRead(@"C:\Users\Rhys\Desktop\nb2.obj")));
+            NBHmHouse myH = null;
+            var myHeight = vm.Context.Blueprint.InterpAltitude(new Vector3(0, 0, 0));
+            if (!surrounding.Houses.TryGetValue(houseID, out myH)) return;
+            foreach (var house in surrounding.Houses)
+            {
+                if (house.Key == houseID) continue;
+                var h = house.Value;
+                //let's make their lot as a surrounding lot
+                var gd = World.State.Device;
+                var subworld = World.MakeSubWorld(gd);
+                subworld.Initialize(gd);
+                var tempVM = new VM(new VMContext(subworld), new VMServerDriver(new VMTSOGlobalLinkStub()), new VMNullHeadlineProvider());
+                tempVM.Init();
+                BlueprintReset(Content.Get().Neighborhood.GetHousePath(house.Key), tempVM);
+                subworld.State.Level = 5;
+                var subHeight = tempVM.Context.Blueprint.InterpAltitude(new Vector3(0, 0, 0));
+                tempVM.Context.Blueprint.BaseAlt = (int)Math.Round(((subHeight - myHeight) + myH.Position.Y - h.Position.Y) / tempVM.Context.Blueprint.TerrainFactor);
+                subworld.GlobalPosition = new Vector2((myH.Position.X - h.Position.X), (myH.Position.Z - h.Position.Z));
+
+                foreach (var obj in tempVM.Entities)
+                {
+                    obj.Position = obj.Position;
+                }
+
+                vm.Context.Blueprint.SubWorlds.Add(subworld);
+            }
+            vm.Context.World.InitSubWorlds();
+        }
+
+        public void BlueprintReset(string path, VM vm)
         {
             string filename = Path.GetFileName(path);
+            bool isSurrounding = true;
+            if (vm == null)
+            {
+                isSurrounding = false;
+                vm = this.vm;
+            }
             try
             {
                 using (var file = new BinaryReader(File.OpenRead(Path.Combine(FSOEnvironment.UserDir, "LocalHouse/") + filename.Substring(0, filename.Length - 4) + ".fsov")))
@@ -527,9 +636,11 @@ namespace Simitone.Client.UI.Screens
                 });
             }
 
+            vm.SpeedMultiplier = -1;
             vm.Tick();
+            vm.SpeedMultiplier = 1;
 
-            if (ActiveFamily == null)
+            if (ActiveFamily == null && !isSurrounding)
             {
                 vm.SetGlobalValue(32, 1);
                 vm.SpeedMultiplier = -1;
@@ -539,7 +650,12 @@ namespace Simitone.Client.UI.Screens
 
         private void Vm_OnGenericVMEvent(VMEventType type, object data)
         {
-            //hmm...
+            switch (type)
+            {
+                case VMEventType.TS1BuildBuyChange:
+                    Frontend.ModeSwitcher.UpdateBuildBuy();
+                    break;
+            }
         }
 
         private void VMLotSwitch(uint lotId)
@@ -626,13 +742,74 @@ namespace Simitone.Client.UI.Screens
 
         public void Save()
         {
+            //save the house first
+            var iff = new IffFile();
+            vm.TS1State.UpdateSIMI(vm);
+            var marshal = vm.Save();
+            var fsov = new FSOV();
+            fsov.ChunkLabel = "Simitone Lot Data";
+            fsov.ChunkID = 1;
+            fsov.ChunkProcessed = true;
+            fsov.ChunkType = "FSOV";
+            fsov.AddedByPatch = true;
 
+            using (var stream = new MemoryStream())
+            {
+                marshal.SerializeInto(new BinaryWriter(stream));
+                fsov.Data = stream.ToArray();
+            }
+
+            iff.AddChunk(fsov);
+
+            var simi = vm.TS1State.SimulationInfo;
+            simi.ChunkProcessed = true;
+            simi.AddedByPatch = true;
+            iff.AddChunk(simi);
+
+            Texture2D roofless = null;
+            var thumb = World.GetLotThumb(GameFacade.GraphicsDevice, (tex) => roofless = FSO.Common.Utils.TextureUtils.Decimate(tex, GameFacade.GraphicsDevice, 2, false));
+            thumb = FSO.Common.Utils.TextureUtils.Decimate(thumb, GameFacade.GraphicsDevice, 2, false);
+
+            var tPNG = GeneratePNG(thumb);
+            tPNG.ChunkID = 513;
+            iff.AddChunk(tPNG);
+
+            var rPNG = GeneratePNG(roofless);
+            rPNG.ChunkID = 512;
+            iff.AddChunk(rPNG);
+
+            Content.Get().Neighborhood.SaveHouse(vm.GetGlobalValue(10), iff);
+            Content.Get().Neighborhood.SaveNeighbourhood(true);
+        }
+
+        public PNG GeneratePNG(Texture2D data)
+        {
+            var png = new PNG();
+            using (var stream = new MemoryStream())
+            {
+                data.SaveAsPng(stream, data.Width, data.Height);
+                png.data = stream.ToArray();
+            }
+
+            png.ChunkLabel = "Lot Thumbnail";
+            png.ChunkProcessed = true;
+            png.ChunkType = "PNG_";
+            png.AddedByPatch = true;
+
+            return png;
         }
 
         public void ExitLot()
         {
             CleanupLastWorld();
-            NeighSelection();
+            NeighSelection(NeighSelectionMode.Normal);
         }
+    }
+
+    public enum NeighSelectionMode
+    {
+        Normal,
+        MoveIn,
+        MoveInMagic
     }
 }

@@ -23,10 +23,19 @@ namespace Simitone.Client.UI.Panels.WorldUI
         {
             Style = TextStyle.DefaultLabel.Clone();
             Style.Size = 12;
-            var value = (int)(headline.Operand.Flags2 | (ushort)(headline.Operand.Duration << 16));
-            Text = (value > 0)?("§" + value):("-§"+ value);
+            var value = (int)(headline.Operand.Flags2 | (headline.Operand.Duration << 16));
+            if (value < -10000)
+            {
+                Text = (-10000-value).ToString();
+                Style.Color = Model.UIStyle.Current.SecondaryText;
+            }
+            else
+            {
+                Text = (value > 0) ? ("§" + value) : ("-§" + value);
+                Style.Color = Model.UIStyle.Current.Text;
+            }
             var measure = Style.MeasureString(Text);
-            Style.Color = Model.UIStyle.Current.Text;
+
 
             var GD = GameFacade.GraphicsDevice;
             MoneyTarget = new RenderTarget2D(GD, (int)measure.X+10, (int)measure.Y+30);

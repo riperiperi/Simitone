@@ -14,6 +14,7 @@ using Simitone.Client.UI.Controls;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using FSO.Common.Utils;
+using FSO.SimAntics;
 
 namespace Simitone.Client.UI.Screens
 {
@@ -94,6 +95,7 @@ namespace Simitone.Client.UI.Screens
 
             (new Thread(() => {
                 FSO.Content.Content.Init(GlobalSettings.Default.StartupPath, GameFacade.GraphicsDevice);
+                VMContext.InitVMConfig();
                 lock (this)
                 {
                     LoadingComplete = true;

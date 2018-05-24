@@ -62,6 +62,7 @@ namespace Simitone.Client.UI.Panels
                 BuildButton,
                 OptionButton
             };
+            UpdateBuildBuy();
         }
 
         public override void Update(UpdateState state)
@@ -71,6 +72,13 @@ namespace Simitone.Client.UI.Panels
             {
                 btn.Visible = btn.Opacity > 0;
             }
+        }
+
+        public void UpdateBuildBuy()
+        {
+            var bbEnable = Game.vm.Context.Architecture.BuildBuyEnabled;
+            BuyButton.Disabled = !bbEnable;
+            BuildButton.Disabled = !bbEnable;
         }
 
         public void EndSwitch(UIMainPanelMode mode)

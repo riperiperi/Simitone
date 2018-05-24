@@ -23,7 +23,22 @@ namespace Simitone.Client
         {
             GameThread.NextUpdate((x) =>
             {
-                var screen = new TS1GameScreen();
+                var mode = NeighSelectionMode.Normal;
+                if (lotName.Length > 1 && lotName[0] == '!')
+                {
+                    switch (lotName[1])
+                    {
+                        case 'n':
+                            mode = NeighSelectionMode.MoveIn; break;
+                        case 'm':
+                            mode = NeighSelectionMode.MoveInMagic; break;
+                    }
+                }
+                var screen = new TS1GameScreen(mode);
+                if (mode != NeighSelectionMode.Normal)
+                {
+                    screen.StartMoveIn(int.Parse(lotName.Substring(2)));
+                }
                 var last = GameFacade.Screens.CurrentUIScreen;
                 GameFacade.Screens.RemoveCurrent();
                 GameFacade.Screens.AddScreen(screen);
@@ -46,14 +61,14 @@ namespace Simitone.Client
 
         public static void EnterCAS()
         {
-            GameThread.NextUpdate((x) =>
-            {
+            //GameThread.NextUpdate((x) =>
+            //{
                 var screen = new TS1CASScreen();
                 var last = GameFacade.Screens.CurrentUIScreen;
                 if (last is TS1GameScreen) ((TS1GameScreen)last).CleanupLastWorld();
                 GameFacade.Screens.RemoveCurrent();
                 GameFacade.Screens.AddScreen(screen);
-            });
+            //});
         }
     }
 }

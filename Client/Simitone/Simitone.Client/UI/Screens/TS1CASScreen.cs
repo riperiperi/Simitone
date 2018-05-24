@@ -26,6 +26,11 @@ using FSO.Content.TS1;
 using Simitone.Client.UI.Panels.CAS;
 using Simitone.Client.UI.Controls;
 using FSO.SimAntics.Model;
+using FSO.Files.Formats.IFF.Chunks;
+using Simitone.Client.UI.Panels;
+using FSO.Client.UI.Controls;
+using Simitone.Client.Utils;
+using FSO.SimAntics.Utils;
 
 namespace Simitone.Client.UI.Screens
 {
@@ -35,6 +40,7 @@ namespace Simitone.Client.UI.Screens
         public FSO.SimAntics.VM vm { get; set; }
         public VMNetDriver Driver;
         public BasicCamera Cam;
+        public bool Initialized;
         public VMAvatar[] HeadAvatars;
         public VMAvatar[] BodyAvatars;
         public List<string> ActiveHeads;
@@ -42,16 +48,19 @@ namespace Simitone.Client.UI.Screens
         public List<string> ActiveHeadTex;
         public List<string> ActiveHandgroupTex;
         public List<string> ActiveBodyTex;
+
+        public static int NeighTypeFrom = 4;
         private bool Dead;
 
-        private float _FamilySimInterp;
+        private float _FamilySimInterp = -2;
         public float FamilySimInterp
         {
             set
             {
                 CameraInterp(value);
-                CASPanel.Position = new Vector2((ScreenWidth - 500) / 2, 10 - (282 * (1-value)));
+                CASPanel.Position = new Vector2((Cam == null)?10:((ScreenWidth - 500) / 2), 10 - (282 * (1-value)));
                 FamilyPanel.ShowI = 1-Math.Abs(value);
+                FamiliesPanel.TitleI = 1 - Math.Abs(value+1);
 
                 _FamilySimInterp = value;
             }
@@ -75,6 +84,8 @@ namespace Simitone.Client.UI.Screens
         public string CurrentSkin = "lgt";
         private bool CurrentChild;
 
+        private int? MoveInFamily;
+
         private UICASMode Mode = UICASMode.FamilyEdit;
 
         public List<CASFamilyMember> WIPFamily = new List<CASFamilyMember>();
@@ -82,11 +93,13 @@ namespace Simitone.Client.UI.Screens
 
         public UISimCASPanel CASPanel;
         public UIFamilyCASPanel FamilyPanel;
+        public UIFamiliesCASPanel FamiliesPanel;
         public UITwoStateButton BackButton;
         public UITwoStateButton AcceptButton;
 
         public Vector3[] ModePositions = new Vector3[]
         {
+            new Vector3(177.3843f, 150.92333f, 3.25105f),
             new Vector3(157.3843f, 28.92333f, 23.25105f),
             new Vector3(119.5611f, 6.122346f, 104.0364f),
             new Vector3(114.0793f, 10f, 64.67827f)
@@ -94,13 +107,23 @@ namespace Simitone.Client.UI.Screens
 
         public Vector3[] ModeTargets = new Vector3[]
         {
+            new Vector3(177.3843f-7f, 130.92333f, 3.25105f+5f),
             new Vector3(150.3057f, 26.01005f, 29.6858f),
             new Vector3(111.7678f, 3.936443f, 98.164f),
             new Vector3(104.5736f, 6.896059f, 64.59684f)
         };
 
+        public Vector3[] Mode2D = new Vector3[]
+        {
+            new Vector3(104, 0, 57),
+            new Vector3(104, 0, 57),
+            new Vector3(103.5611f, 0, 92.0364f),
+            new Vector3(84.0793f+6, 0, 64f-6)
+        };
+
         public Vector3[] SinTransitions = new Vector3[]
         {
+            new Vector3(0, 0, 0),
             new Vector3(12f, 0, 0),
             new Vector3(-6f, 0, 0),
             new Vector3()
@@ -108,24 +131,44 @@ namespace Simitone.Client.UI.Screens
 
         public void CameraInterp(float value)
         {
-            if (value < -1) return;
-            var prev = (int)(value + 1);
-            var next = (int)(Math.Ceiling(value) + 1);
-            if (next > 2) next = 2;
+            if (value < -2) value = -2;
+            var prev = (int)(value + 2);
+            var next = (int)(Math.Ceiling(value) + 2);
+            if (next > 3) next = 3;
 
-            var pos1 = ModePositions[prev];
-            var pos2 = ModePositions[next];
-            var targ1 = ModeTargets[prev] - pos1;
-            var targ2 = ModeTargets[next] - pos2;
+            if (Cam == null)
+            {
+                //2d
+                var pos1 = Mode2D[prev];
+                var pos2 = Mode2D[next];
 
-            value = (float)DirectionUtils.PosMod(value, 1.0);
-            var camvec = Vector3.Lerp(targ1, targ2, value);
-            var campos = Vector3.Lerp(pos1, pos2, value);
+                if (World != null) World.State.PreciseZoom = 1 + Math.Min(0, value*0.5f);
+                value = (float)DirectionUtils.PosMod(value, 1.0);
+                var campos = Vector3.Lerp(pos1, pos2, value);
+                campos += (float)Math.Sin(value * Math.PI) * SinTransitions[prev];
 
-            campos += (float)Math.Sin(value * Math.PI) * SinTransitions[prev];
 
-            Cam.Position = campos;
-            Cam.Target = campos + camvec;
+
+                if (World != null)
+                    World.State.CenterTile = new Vector2(campos.X, campos.Z) / 3f;
+            }
+            else
+            {
+
+                var pos1 = ModePositions[prev];
+                var pos2 = ModePositions[next];
+                var targ1 = ModeTargets[prev] - pos1;
+                var targ2 = ModeTargets[next] - pos2;
+
+                value = (float)DirectionUtils.PosMod(value, 1.0);
+                var camvec = Vector3.Lerp(targ1, targ2, value);
+                var campos = Vector3.Lerp(pos1, pos2, value);
+
+                campos += (float)Math.Sin(value * Math.PI) * SinTransitions[prev];
+
+                Cam.Position = campos;
+                Cam.Target = campos + camvec;
+            }
         }
 
         private void PopulateSimType(string simtype)
@@ -134,8 +177,6 @@ namespace Simitone.Client.UI.Screens
             var heads = Content.Get().BCFGlobal.CollectionsByName["c"].ClothesByAvatarType[simtype];
             if (simtype[1] == 'c') simtype += "chd";
             var bodies = Content.Get().BCFGlobal.CollectionsByName["b"].ClothesByAvatarType[simtype];
-
-            //todo: search for textures
 
             var tex = (TS1AvatarTextureProvider)Content.Get().AvatarTextures;
             var texnames = tex.GetAllNames();
@@ -207,7 +248,7 @@ namespace Simitone.Client.UI.Screens
 
             var moving = 0;
 
-            if (state.MouseState.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
+            if (state.MouseStates.Count > 0)
             {
                 if (XLast == -1)
                 {
@@ -396,6 +437,10 @@ namespace Simitone.Client.UI.Screens
             FamilyPanel.ModifySim = ModifySim;
             Add(FamilyPanel);
 
+            FamiliesPanel = new UIFamiliesCASPanel();
+            FamiliesPanel.OnNewFamily += () => { SetMode(UICASMode.FamilyEdit); };
+            Add(FamiliesPanel);
+
             BackButton = new UITwoStateButton(ui.Get("btn_back.png").Get(gd));
             BackButton.Position = new Vector2(25, ScreenHeight - 140);
             Add(BackButton);
@@ -462,7 +507,7 @@ namespace Simitone.Client.UI.Screens
                 }
                 for (int j = 0; j < 5; j++)
                 {
-                    CASPanel.Personalities[j].Points = sim.Personality[j];
+                    CASPanel.Personalities[j].Points = sim.Personality[j] / 100;
                 }
                 CurrentSkin = sim.SkinColor;
 
@@ -492,6 +537,8 @@ namespace Simitone.Client.UI.Screens
             CASPanel.UpdateType();
         }
 
+        public UIMobileAlert ConfirmDialog;
+
         private void Accept(UIElement button)
         {
             switch (Mode)
@@ -503,9 +550,27 @@ namespace Simitone.Client.UI.Screens
                 case UICASMode.FamilyEdit:
                     //add or replace the family in the neighbourhood
                     //need to generate an actual FAMI and save it for this
+                    if (ConfirmDialog == null)
+                    {
+                        ConfirmDialog = new UIMobileAlert(new UIAlertOptions()
+                        {
+                            Title = GameFacade.Strings.GetString("129", "13"),
+                            Message = GameFacade.Strings.GetString("129", "14"),
+                            Buttons = UIAlertButton.YesNo(
+                                (ybtn) => { ConfirmDialog.Close(); Accept(ybtn); ConfirmDialog = null; },
+                                (nbtn) => { ConfirmDialog.Close(); ConfirmDialog = null; }
+                            )
+                        });
+                        UIScreen.GlobalShowDialog(ConfirmDialog, true);
+                        return;
+                    } else
+                    {
+                        SaveFamily();
+                    }
                     break;
                 case UICASMode.FamilySelect:
                     //accept button here is move in. notify the neighbourhood screen that we're moving in now.
+                    MoveInFamily = FamiliesPanel.Families[FamiliesPanel.Selection].ChunkID;
                     break;
             }
             SetMode((UICASMode)(((int)Mode) - 1));
@@ -513,6 +578,27 @@ namespace Simitone.Client.UI.Screens
 
         private void GoBack(UIElement button)
         {
+            if (Mode == UICASMode.FamilyEdit)
+            {
+                if (ConfirmDialog == null)
+                {
+                    ConfirmDialog = new UIMobileAlert(new UIAlertOptions()
+                    {
+                        Title = GameFacade.Strings.GetString("129", "7"),
+                        Message = GameFacade.Strings.GetString("129", "8"),
+                        Buttons = UIAlertButton.YesNo(
+                            (ybtn) => { ConfirmDialog.Close(); GoBack(ybtn); ConfirmDialog = null; },
+                            (nbtn) => { ConfirmDialog.Close(); ConfirmDialog = null; }
+                        )
+                    });
+                    UIScreen.GlobalShowDialog(ConfirmDialog, true);
+                    return;
+                }
+                else
+                {
+                    ClearFamily();
+                }
+            }
             SetMode((UICASMode)(((int)Mode) - 1));
         }
 
@@ -521,13 +607,25 @@ namespace Simitone.Client.UI.Screens
             if (mode == UICASMode.ToNeighborhood)
             {
                 //todo: animate into this
-                CleanupLastWorld();
+                
                 Dead = true;
-                GameController.EnterGameMode("", false);
+                var dialog = new UITransDialog("normal", () => {
+                    CleanupLastWorld();
+                    if (MoveInFamily == null)
+                        GameController.EnterGameMode("", false);
+                    else
+                        GameController.EnterGameMode("!"+((NeighTypeFrom == 7)?'m':'n')+MoveInFamily.Value.ToString(), false);
+                });
+                return;
             } else if (mode == UICASMode.FamilyEdit)
             {
                 FamilyPanel.Reset();
             }
+
+            FamiliesPanel.SetSelection(-1);
+            if (mode == UICASMode.FamilySelect) AcceptButton.Texture = Content.Get().CustomUI.Get("btn_movein.png").Get(GameFacade.GraphicsDevice);
+            else AcceptButton.Texture = Content.Get().CustomUI.Get("btn_accept.png").Get(GameFacade.GraphicsDevice);
+
             GameFacade.Screens.Tween.To(this, 1f, new Dictionary<string, float> { { "FamilySimInterp", (int)mode-1 } }, TweenQuad.EaseInOut);
             Mode = mode;
         }
@@ -553,25 +651,48 @@ namespace Simitone.Client.UI.Screens
         public override void Update(UpdateState state)
         {
             base.Update(state);
-            ModePositions[2].Y = 11;
-            ModeTargets[2].Y = 7.896059f;
+            ModePositions[3].Y = 11;
+            ModeTargets[3].Y = 7.896059f;
             if (Dead) return;
             if (vm == null) InitializeLot();
             vm.Update();
-            if (World != null && Cam == null)
+            if (World != null && !Initialized)
             {
-                var rcs = (WorldStateRC)(World.State);
-                Cam = (WorldCamera3D)rcs.Camera;
-                rcs.FixedCam = true;
-                rcs.CameraMode = true;
-                SetMode(UICASMode.FamilyEdit);
+                var rcs = (World.State as WorldStateRC);
+                if (rcs != null)
+                {
+                    Cam = (WorldCamera3D)rcs.Camera;
+                    rcs.FixedCam = true;
+                    rcs.CameraMode = true;
+                }
+                SetMode(UICASMode.FamilySelect);
+                SetFamilies();
+                Initialized = true;
                 //FamilySimInterp = FamilySimInterp;
             }
 
-            if (World.State.Level != 2)
+            if (World.State.PreciseZoom != 1) World.State.PreciseZoom = World.State.PreciseZoom;
+            switch (Mode)
             {
-                World.State.Level = 2;
-                World.State.DrawRoofs = true;
+                case UICASMode.FamilySelect:
+                    if (World.State.Level != 2)
+                    {
+                        World.State.Level = 2;
+                        World.State.DrawRoofs = true;
+                        vm.Context.Blueprint.Cutaway = new bool[vm.Context.Blueprint.Cutaway.Length];
+                        vm.Context.Blueprint.Damage.Add(new FSO.LotView.Model.BlueprintDamage(FSO.LotView.Model.BlueprintDamageType.WALL_CUT_CHANGED));
+                    }
+                    break;
+                default:
+                    if (World.State.Level != 1 && Cam == null)
+                    {
+                        World.State.Level = 1;
+                        World.State.DrawRoofs = false;
+                        vm.Context.Blueprint.Cutaway = VMArchitectureTools.GenerateRoomCut(vm.Context.Architecture, World.State.Level, World.State.CutRotation, 
+                            new HashSet<uint>(vm.Context.RoomInfo.Where(x => x.Room.IsOutside == false).Select(x => (uint)x.Room.RoomID)));
+                        vm.Context.Blueprint.Damage.Add(new FSO.LotView.Model.BlueprintDamage(FSO.LotView.Model.BlueprintDamageType.WALL_CUT_CHANGED));
+                    }
+                    break;
             }
 
             vm.Context.Clock.Minutes = 0;
@@ -588,11 +709,17 @@ namespace Simitone.Client.UI.Screens
                 case UICASMode.SimEdit:
                     if (CASPanel.FirstNameTextBox.CurrentText.Length == 0) disableAccept = true;
                     break;
+                case UICASMode.FamilySelect:
+                    if (FamiliesPanel.Selection == -1) disableAccept = true;
+                    break;
+                case UICASMode.FamilyEdit:
+                    if (WIPFamily.Count == 0) disableAccept = true;
+                    break;
             }
 
             AcceptButton.Disabled = disableAccept;
-            AcceptButton.ForceState = disableAccept ? 0 : -1;
-            AcceptButton.Opacity = disableAccept ? 0.5f : 1;
+            //AcceptButton.ForceState = disableAccept ? 0 : -1;
+            //AcceptButton.Opacity = disableAccept ? 0.5f : 1;
 
             if (Mode == UICASMode.SimEdit)
                 UpdateCarousel(state);
@@ -629,6 +756,15 @@ namespace Simitone.Client.UI.Screens
                 foreach (var action in q)
                     fam.Thread.CancelAction(action.UID);
             }
+        }
+
+        public void SetFamilies()
+        {
+            //get all families that don't have a house from neighbourhood, and populate the list
+            //i think house number -1 is townies, so only select 0
+            var all = Content.Get().Neighborhood.MainResource.List<FAMI>();
+            var families = all.Where(x => (x.Unknown & 16) > 0 && x.HouseNumber == 0);
+            FamiliesPanel.UpdateFamilies(families.ToList(), vm);
         }
 
         public void SetFamilyMember(int index)
@@ -684,6 +820,46 @@ namespace Simitone.Client.UI.Screens
             fam.HeadOutfit = new FSO.SimAntics.Model.VMOutfitReference(new Outfit() { TS1AppearanceID = data.Head+".apr", TS1TextureID = data.HeadTex });
         }
 
+        private SimTemplateCreateInfo CASToNeighGen(CASFamilyMember x)
+        {
+            var code = ((x.Gender & 1) == 0) ? "m" : "f";
+            code += (x.Gender > 1) ? "c" : "a";
+            var ind = x.Body.IndexOf("_");
+            var bodyType = x.Body.Substring(ind - 3, 3);
+            code += bodyType;
+            var info = new SimTemplateCreateInfo(code, x.SkinColor);
+            info.Name = x.Name;
+            info.Bio = x.Bio;
+            info.PersonalityPoints = x.Personality;
+
+            info.BodyStringReplace[1] = x.Body + ",BODY=" + x.BodyTex;
+            info.BodyStringReplace[2] = x.Head + ",HEAD-HEAD=" + x.HeadTex;
+
+            var hand = (x.Gender > 1) ? "u" : ((x.Gender == 0) ? "m" : "f");
+            info.BodyStringReplace[17] = "H" + hand + "LO,HAND=" + "huao" + x.HandgroupTex;
+            info.BodyStringReplace[18] = "H" + hand + "RO,HAND=" + "huao" + x.HandgroupTex;
+            info.BodyStringReplace[19] = "H" + hand + "LP,HAND=" + "huao" + x.HandgroupTex;
+            info.BodyStringReplace[20] = "H" + hand + "RP,HAND=" + "huao" + x.HandgroupTex;
+            info.BodyStringReplace[21] = "H" + hand + "LO,HAND=" + "huao" + x.HandgroupTex;
+            info.BodyStringReplace[22] = "H" + hand + "RC,HAND=" + "huao" + x.HandgroupTex;
+            return info;
+        }
+
+        public void ClearFamily()
+        {
+            var count = WIPFamily.Count;
+            FamilyPanel.SecondName.CurrentText = "";
+            for (int i = count-1; i >= 0; i--)
+                ModifySim(true, i);
+        }
+
+        public void SaveFamily()
+        {
+            SimitoneNeighbourGenerator.CreateFamily(FamilyPanel.SecondName.CurrentText, WIPFamily.Count, WIPFamily.Select(CASToNeighGen).ToArray());
+            SetFamilies();
+            ClearFamily();
+        }
+
         public void AcceptMember()
         {
             var mem = BuildMember();
@@ -713,7 +889,7 @@ namespace Simitone.Client.UI.Screens
                 Head = ActiveHeads[j],
                 HeadTex = ActiveHeadTex[j],
                 Gender = (short)(((CurrentCode[0] == 'm') ? 0 : 1) | ((CurrentCode[1] == 'c') ? 2 : 0)),
-                Personality = CASPanel.Personalities.Select(x => (short)x.Points).ToArray(),
+                Personality = CASPanel.Personalities.Select(x => (short)(x.Points * 100)).ToArray(),
                 SkinColor = CurrentSkin
             };
             return sim;
@@ -746,7 +922,6 @@ namespace Simitone.Client.UI.Screens
             //clear our cache too, if the setting lets us do that
             TimedReferenceController.Clear();
             TimedReferenceController.Clear();
-            VM.ClearAssembled();
 
             vm.Context.Ambience.Kill();
             foreach (var ent in vm.Entities)
@@ -802,13 +977,11 @@ namespace Simitone.Client.UI.Screens
             vm.Tick();
 
             vm.Context.Clock.Hours = 12;
-            vm.TSOState.Size = (10) | (3 << 8);
-            vm.Context.UpdateTSOBuildableArea();
-            vm.MyUID = 1;
+            vm.MyUID = uint.MaxValue;
             var settings = GlobalSettings.Default;
             var myClient = new VMNetClient
             {
-                PersistID = 1,
+                PersistID = uint.MaxValue,
                 RemoteIP = "local",
                 AvatarState = new VMNetAvatarPersistState()
                 {
@@ -816,7 +989,7 @@ namespace Simitone.Client.UI.Screens
                     DefaultSuits = new VMAvatarDefaultSuits(settings.DebugGender),
                     BodyOutfit = settings.DebugBody,
                     HeadOutfit = settings.DebugHead,
-                    PersistID = 1,
+                    PersistID = uint.MaxValue,
                     SkinTone = (byte)settings.DebugSkin,
                     Gender = (short)(settings.DebugGender ? 1 : 0),
                     Permissions = FSO.SimAntics.Model.TSOPlatform.VMTSOAvatarPermissions.Admin,

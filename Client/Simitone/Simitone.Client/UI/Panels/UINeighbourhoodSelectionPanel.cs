@@ -17,6 +17,10 @@ using FSO.Client;
 using FSO.Content;
 using FSO.Common.Utils;
 using Simitone.Client.UI.Controls;
+using Simitone.Client.Utils;
+using FSO.Common;
+using System.IO;
+using FSO.Files.RC;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -127,7 +131,6 @@ namespace Simitone.Client.UI.Panels
             GameResized();
         }
 
-
         public void UpdatePosition()
         {
             base.GameResized();
@@ -203,6 +206,7 @@ namespace Simitone.Client.UI.Panels
             Zoom = Zoom;
             CenterPositionX = CenterPositionX;
             CenterPositionY = CenterPositionY;
+            //SimitoneNeighOBJExporter.SaveOBJ(Path.Combine(FSOEnvironment.UserDir, "NeighModel" + mode + "/"), locations);
         }
 
         public void ResetZoom()
@@ -337,17 +341,26 @@ namespace Simitone.Client.UI.Panels
 
         public UINeighborhoodHouseButton(int houseNumber, Action<int> selectionCallback, float scale)
         {
+            if (houseNumber == 71) { }
             AlphaTime = 0;
             var house = Content.Get().Neighborhood.GetHouse(houseNumber);
-            HouseTex = house.Get<BMP>(513).GetTexture(GameFacade.GraphicsDevice);
-            HouseOpenTex = house.Get<BMP>(512).GetTexture(GameFacade.GraphicsDevice);
+            HouseTex = house.Get<BMP>(513)?.GetTexture(GameFacade.GraphicsDevice);
+            if (HouseTex != null) {
+                HouseOpenTex = house.Get<BMP>(512).GetTexture(GameFacade.GraphicsDevice);
+                Offsets = house.Get<THMB>(512); //get offsets before scaling
+            } else
+            {
+                HouseTex = house.Get<PNG>(513).GetTexture(GameFacade.GraphicsDevice);
+                HouseOpenTex = house.Get<PNG>(512).GetTexture(GameFacade.GraphicsDevice);
+                Offsets = new THMB() { Width = HouseTex.Width / 2, Height = HouseTex.Height / 2 };
+            }
+
             HouseScale = scale;
-            Offsets = house.Get<THMB>(512); //get offsets before scaling
 
             var w = (int)(HouseTex.Width / HouseScale);
             var h = (int)(HouseTex.Height / HouseScale);
             var clickHandler =
-                ListenForMouse(new Rectangle(w / -2, h / -2, w, h), (evt, state) =>
+                ListenForMouse(new Rectangle(w / -2, w / -4, w, h/2), (evt, state) =>
                 {
                     switch (evt)
                     {
@@ -367,13 +380,13 @@ namespace Simitone.Client.UI.Panels
 
         public override void Draw(UISpriteBatch batch)
         {
-            var yOff = new Vector2(Offsets.XOff, Offsets.BaseYOff) / (HouseScale * 2f);
+            var yOff = new Vector2(Offsets.XOff, -Offsets.BaseYOff) / HouseScale;
             var yOff2 = yOff;
             yOff2.Y -= Offsets.AddYOff / (HouseScale);
-            DrawLocalTexture(batch, HouseTex, null, new Vector2(-HouseTex.Width, -HouseTex.Height) / (HouseScale * 2) + yOff, new Vector2(1f / HouseScale, 1f / HouseScale));
+            DrawLocalTexture(batch, HouseTex, null, new Vector2(-Offsets.Width, -Offsets.Height)/ HouseScale + yOff, new Vector2(1f / HouseScale, 1f / HouseScale));
             if (AlphaTime > 0)
             {
-                DrawLocalTexture(batch, HouseOpenTex, null, new Vector2(-HouseTex.Width, -HouseTex.Height) / (HouseScale * 2) + yOff2, new Vector2(1f / HouseScale, 1f / HouseScale), Color.White * AlphaTime);
+                DrawLocalTexture(batch, HouseOpenTex, null, new Vector2(-Offsets.Width, -Offsets.Height)/ HouseScale + yOff2, new Vector2(1f / HouseScale, 1f / HouseScale), Color.White * AlphaTime);
             }
         }
 

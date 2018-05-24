@@ -20,6 +20,7 @@ using Microsoft.Xna.Framework.Audio;
 using FSO.HIT.Model;
 using FSO.Client;
 using FSO.Files;
+using FSO.SimAntics;
 
 namespace Simitone.Client
 {
@@ -35,12 +36,12 @@ namespace Simitone.Client
         public SimitoneGame() : base()
         {
             GameFacade.Game = this;
-            ImageLoader.PremultiplyPNG = true;
             if (GameFacade.DirectX) TimedReferenceController.SetMode(CacheType.PERMANENT);
             Content.RootDirectory = FSOEnvironment.GFXContentDir;
 
             TargetElapsedTime = new TimeSpan(10000000 / GlobalSettings.Default.TargetRefreshRate);
             FSOEnvironment.RefreshRate = GlobalSettings.Default.TargetRefreshRate;
+            FSOEnvironment.TexCompress = false;
 
             if (!FSOEnvironment.SoftwareKeyboard)
             {
@@ -91,8 +92,8 @@ namespace Simitone.Client
             var settings = GlobalSettings.Default;
             if (FSOEnvironment.DPIScaleFactor != 1 || FSOEnvironment.SoftwareDepth)
             {
-                settings.GraphicsWidth = GraphicsDevice.Viewport.Width / FSOEnvironment.DPIScaleFactor;
-                settings.GraphicsHeight = GraphicsDevice.Viewport.Height / FSOEnvironment.DPIScaleFactor;
+                settings.GraphicsWidth = (int)(GraphicsDevice.Viewport.Width / FSOEnvironment.DPIScaleFactor);
+                settings.GraphicsHeight = (int)(GraphicsDevice.Viewport.Height / FSOEnvironment.DPIScaleFactor);
             }
 
             FSO.LotView.WorldConfig.Current = new FSO.LotView.WorldConfig()

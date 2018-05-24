@@ -28,7 +28,9 @@ namespace Simitone.Client.UI.Model
             if (obj is VMAvatar)
             {
                 var ava = (VMAvatar)obj;
-                var id = ava.HeadOutfit.Name +":"+ ava.HeadOutfit.OftData.TS1TextureID;
+                var headname = ava.HeadOutfit.Name;
+                if (headname == "") headname = ava.BodyOutfit.OftData.TS1TextureID;
+                var id = headname +":"+ ava.HeadOutfit.OftData.TS1TextureID;
 
                 Texture2D result = null;
                 if (!AvatarHeadCache.TryGetValue(id, out result))

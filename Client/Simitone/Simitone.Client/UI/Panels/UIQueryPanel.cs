@@ -18,6 +18,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FSO.Common.Rendering.Framework.Model;
 using FSO.Common;
+using FSO.UI.Panels;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -130,6 +131,8 @@ namespace Simitone.Client.UI.Panels
 
             Title.Alignment = TextAlignment.Left | TextAlignment.Top;
             Body.Alignment = TextAlignment.Left | TextAlignment.Top;
+
+            InternalBefore = true;
         }
 
         public override void Update(UpdateState state)

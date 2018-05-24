@@ -158,6 +158,122 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
             },
         };
 
+        public static Dictionary<UICatalogMode, List<UICatalogSubcat>> DTCategories = new Dictionary<UICatalogMode, List<UICatalogSubcat>>()
+        {
+            {
+                UICatalogMode.Downtown,
+                new List<UICatalogSubcat>()
+                {
+                    new UICatalogSubcat() { MaskBit = 0, StrTable = 150, StrInd = 16}, //food
+                    new UICatalogSubcat() { MaskBit = 1, StrTable = 150, StrInd = 17}, //shops
+                    new UICatalogSubcat() { MaskBit = 2, StrTable = 150, StrInd = 18}, //outside
+                    new UICatalogSubcat() { MaskBit = 3, StrTable = 150, StrInd = 19}, //street
+                }
+            },
+
+            {
+                UICatalogMode.Community,
+                new List<UICatalogSubcat>()
+                {
+                    new UICatalogSubcat() { MaskBit = 0, StrTable = 150, StrInd = 32}, //food
+                    new UICatalogSubcat() { MaskBit = 1, StrTable = 150, StrInd = 33}, //shops
+                    new UICatalogSubcat() { MaskBit = 2, StrTable = 150, StrInd = 34}, //outside
+                    new UICatalogSubcat() { MaskBit = 3, StrTable = 150, StrInd = 35}, //street
+                }
+            },
+
+            {
+                UICatalogMode.Vacation,
+                new List<UICatalogSubcat>()
+                {
+                    new UICatalogSubcat() { MaskBit = 0, StrTable = 150, StrInd = 24}, //lodging
+                    new UICatalogSubcat() { MaskBit = 1, StrTable = 150, StrInd = 25}, //shops
+                    new UICatalogSubcat() { MaskBit = 2, StrTable = 150, StrInd = 26}, //recreation
+                    new UICatalogSubcat() { MaskBit = 3, StrTable = 150, StrInd = 27}, //ameneties
+                }
+            },
+
+            {
+                UICatalogMode.Studiotown,
+                new List<UICatalogSubcat>()
+                {
+                    new UICatalogSubcat() { MaskBit = 0, StrTable = 150, StrInd = 40}, //food
+                    new UICatalogSubcat() { MaskBit = 1, StrTable = 150, StrInd = 41}, //shops
+                    new UICatalogSubcat() { MaskBit = 2, StrTable = 150, StrInd = 42}, //studio
+                    new UICatalogSubcat() { MaskBit = 3, StrTable = 150, StrInd = 43}, //spa
+                }
+            },
+
+            {
+                UICatalogMode.Magictown,
+                new List<UICatalogSubcat>()
+                {
+                    new UICatalogSubcat() { MaskBit = 0, StrTable = 150, StrInd = 16}, //food
+                    new UICatalogSubcat() { MaskBit = 1, StrTable = 150, StrInd = 17}, //shops
+                    new UICatalogSubcat() { MaskBit = 2, StrTable = 150, StrInd = 44}, //magico
+                    new UICatalogSubcat() { MaskBit = 3, StrTable = 150, StrInd = 18}, //outside
+                }
+            },
+        };
+
+        public static Dictionary<UICatalogMode, List<string>> DTIcons = new Dictionary<UICatalogMode, List<string>>()
+        {
+            {
+                UICatalogMode.Downtown,
+                new List<string>()
+                {
+                    "dt_food", //food
+                    "dt_shop", //shops
+                    "dt_out", //outside
+                    "dt_street", //street
+                }
+            },
+
+            {
+                UICatalogMode.Community,
+                new List<string>()
+                {
+                    "dt_food", //food
+                    "dt_shop", //shops
+                    "dt_out", //outside
+                    "dt_street", //street
+                }
+            },
+
+            {
+                UICatalogMode.Vacation,
+                new List<string>()
+                {
+                    "vac_lodg", //food
+                    "dt_shop", //shops
+                    "vac_recr", //recreation
+                    "vac_amen", //amenities
+                }
+            },
+
+            {
+                UICatalogMode.Studiotown,
+                new List<string>()
+                {
+                    "dt_food", //food
+                    "dt_shop", //shops
+                    "st_studio", //studio
+                    "st_spa", //spa
+                }
+            },
+
+            {
+                UICatalogMode.Magictown,
+                new List<string>()
+                {
+                    "dt_food", //food
+                    "dt_shop", //shops
+                    "misc_magi", //magic
+                    "dt_out", //outside
+                }
+            },
+        };
+
         static UIBuyBrowsePanel()
         {
             Categories = new List<List<UICatalogSubcat>>();
@@ -397,7 +513,32 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
 
             ChoosingSub = true;
 
-            var cats = (Mode == UICatalogMode.Build)?BuildCategories[category]:Categories[category];
+            List<UICatalogSubcat> cats;
+            if (Mode == UICatalogMode.Build) cats = BuildCategories[category];
+            else if (Mode != UICatalogMode.Normal)
+            {
+                cats = DTCategories[Mode];
+                if (cats.Count == 4) //haven't added other or all subcats yet
+                {
+                    cats.Add(new UICatalogSubcat()
+                    {
+                        StrTable = 210,
+                        MaskBit = 7,
+                        StrInd = 1, //other
+                    });
+
+                    cats.Add(new UICatalogSubcat()
+                    {
+                        StrTable = 210,
+                        MaskBit = 8,
+                        StrInd = 2, //all
+                    });
+                }
+            }
+            else
+            {
+                cats = Categories[category];
+            }
 
             var boff = CatContainer.Size.X/(cats.Count + 0.5f) / 2f;
 
@@ -422,6 +563,11 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
                 if (Mode == UICatalogMode.Build) {
                     name = BuildIcons[category][i];
                 }
+                else if (Mode != UICatalogMode.Normal) {
+                    if (cat.MaskBit == 7) name = "other";
+                    else if (cat.MaskBit == 8) name = "all";
+                    else name = DTIcons[Mode][cat.MaskBit];
+                }
                 else
                 {
                     if (cat.MaskBit == 7) name = "other";
@@ -434,6 +580,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
                 var subbutton = new UICatButton(Content.Get().CustomUI.Get("cat_"+name+".png").Get(GameFacade.GraphicsDevice));
                 subbutton.OnButtonClick += (btn) => { InitSubcategory(cat); };
                 subbutton.Position = new Vector2(boff * (1.5f + i * 2) - (65 / 2), 16);
+                subbutton.Disabled = SubcatIsEmpty(cat);
                 SelButtons.Add(subbutton);
                 Add(subbutton);
             }
@@ -671,6 +818,24 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
                     return item.MagictownSort;
                 default:
                     return item.Subsort;
+            }
+        }
+
+        private bool SubcatIsEmpty(UICatalogSubcat cat)
+        {
+            var index = cat.MaskBit;
+            if (Mode == UICatalogMode.Build)
+            {
+                return FullCategory.FirstOrDefault() == null;
+            }
+            else if (index == 8)
+            {
+                return !FullCategory.Any(x => (GetSubsort(x.Item)) > 0);
+            }
+            else
+            {
+                var mask = 1 << index;
+                return !FullCategory.Any(x => (GetSubsort(x.Item) & mask) > 0);
             }
         }
 

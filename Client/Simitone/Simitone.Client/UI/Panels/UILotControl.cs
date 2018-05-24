@@ -35,6 +35,7 @@ using FSO.LotView.RC;
 using Simitone.Client.UI.Panels.LotControls;
 using FSO.Client.UI.Panels.LotControls;
 using FSO.UI.Panels.LotControls;
+using Simitone.Client.UI.Controls;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -55,6 +56,11 @@ namespace Simitone.Client.UI.Panels
         public FSO.SimAntics.VM vm;
         public FSO.LotView.World World { get; set; }
         public VMEntity ActiveEntity { get; set; }
+        public int Budget { get
+            {
+                return vm.TS1State.CurrentFamily?.Budget ?? int.MaxValue;
+            }
+        }
         public uint SelectedSimID
         {
             get
@@ -88,7 +94,7 @@ namespace Simitone.Client.UI.Panels
         // NOTE: Blocking dialog system assumes that nothing goes wrong with data transmission (which it shouldn't, because we're using TCP)
         // and that the code actually blocks further dialogs from appearing while waiting for a response.
         // If we are to implement controlling multiple sims, this must be changed.
-        private UIMobileAlert BlockingDialog;
+        private UIMobileDialog BlockingDialog;
         private UINeighborhoodSelectionPanel TS1NeighSelector;
         private ulong LastDialogID;
 
@@ -174,11 +180,6 @@ namespace Simitone.Client.UI.Panels
             if (IDEHook.IDE != null) IDEHook.IDE.IDEBreakpointHit(vm, entity);
         }
 
-        public string GetLotTitle()
-        {
-            return vm.LotName + " - " + vm.Entities.Count(x => x is VMAvatar && x.PersistID != 0);
-        }
-
         void vm_OnDialog(FSO.SimAntics.Model.VMDialogInfo info)
         {
             if (info != null && ((info.DialogID == LastDialogID && info.DialogID != 0 && info.Block))) return;
@@ -245,7 +246,21 @@ namespace Simitone.Client.UI.Panels
                     ((TS1GameScreen)Parent).LotControl.Visible = false;
                     TS1NeighSelector.OnHouseSelect += HouseSelected;
                     return;
-
+                case VMDialogType.TS1PhoneBook:
+                    var phone = new UICallNeighborAlert(((VMAvatar)info.Caller).GetPersonData(FSO.SimAntics.Model.VMPersonDataVariable.NeighborId), vm);
+                    BlockingDialog = phone;
+                    UIScreen.GlobalShowDialog(phone, true);
+                    phone.OnResult += (result) =>
+                    {
+                        vm.SendCommand(new VMNetDialogResponseCmd
+                        {
+                            ActorUID = info.Caller.PersistID,
+                            ResponseCode = (byte)((result > 0) ? 1 : 0),
+                            ResponseText = result.ToString()
+                        });
+                        BlockingDialog = null;
+                    };
+                    return;
             }
 
             var alert = new UIMobileAlert(options);
@@ -291,14 +306,15 @@ namespace Simitone.Client.UI.Panels
 
         private void DialogResponse(byte code)
         {
-            if (BlockingDialog == null || ActiveEntity == null) return;
+            if (BlockingDialog == null || !(BlockingDialog is UIMobileAlert) || ActiveEntity == null) return;
             BlockingDialog.Close();
+            var ma = (UIMobileAlert)BlockingDialog;
             LastDialogID = 0;
             vm.SendCommand(new VMNetDialogResponseCmd
             {
                 ActorUID = ActiveEntity.PersistID,
                 ResponseCode = code,
-                ResponseText = (BlockingDialog.ResponseText == null) ? "" : BlockingDialog.ResponseText
+                ResponseText = (ma.ResponseText == null) ? "" : ma.ResponseText
             });
             BlockingDialog = null;
         }
@@ -507,8 +523,8 @@ namespace Simitone.Client.UI.Panels
                 {
                     OldMX = state.MouseState.X;
                     OldMY = state.MouseState.Y;
-                    var newHover = World.GetObjectIDAtScreenPos(state.MouseState.X / FSOEnvironment.DPIScaleFactor,
-                        state.MouseState.Y / FSOEnvironment.DPIScaleFactor,
+                    var newHover = World.GetObjectIDAtScreenPos(state.MouseState.X,
+                        state.MouseState.Y,
                         GameFacade.GraphicsDevice);
 
                     if (ObjectHover != newHover)
@@ -671,9 +687,7 @@ namespace Simitone.Client.UI.Panels
                 if (World.State.Zoom != targetZoom) World.State.Zoom = targetZoom;
                 WorldConfig.Current.SmoothZoom = false;
             }
-
-            //Cheats.Update(state);
-            //AvatarDS.Update();
+            
             if (ActiveEntity == null || ActiveEntity.Dead || ActiveEntity.PersistID != SelectedSimID)
             {
                 ActiveEntity = vm.Entities.FirstOrDefault(x => x is VMAvatar && x.PersistID == SelectedSimID); //try and hook onto a sim if we have none selected.
@@ -690,6 +704,28 @@ namespace Simitone.Client.UI.Panels
 
             if (GotoObject == null) GotoObject = vm.Context.CreateObjectInstance(GOTO_GUID, LotTilePos.OUT_OF_WORLD, Direction.NORTH, true).Objects[0];
 
+
+            //update plumbbob
+            var plumb = Content.Get().RCMeshes.Get("arrow.fsom");
+            foreach (VMAvatar avatar in vm.Context.ObjectQueries.Avatars)
+            {
+                if (avatar.Avatar == null) continue;
+                var isActive = (avatar == ActiveEntity);
+                if ((avatar.Avatar.HeadObject == plumb) != isActive)
+                {
+                    avatar.Avatar.HeadObject = (avatar == ActiveEntity) ? plumb : null;
+                    avatar.Avatar.HeadObjectSpeedyVel = 0.2f;
+                }
+                avatar.Avatar.HeadObjectRotation += 3f / FSOEnvironment.RefreshRate;
+                if (isActive)
+                {
+                    avatar.Avatar.HeadObjectRotation += avatar.Avatar.HeadObjectSpeedyVel;
+                    avatar.Avatar.HeadObjectSpeedyVel *= 0.98f;
+                } else if (avatar.GetValue(FSO.SimAntics.Model.VMStackObjectVariable.Category) == 87)
+                {
+                    avatar.Avatar.HeadObject = Content.Get().RCMeshes.Get("star.fsom");
+                }
+            }
             /*
             if (ActiveEntity != null && BlockingDialog != null)
             {
@@ -775,6 +811,21 @@ namespace Simitone.Client.UI.Panels
                     PieMenu = null;
                 }
 
+                if (state.NewKeys.Contains(Keys.F8))
+                {
+                    UIMobileAlert alert = null;
+                    alert = new UIMobileAlert(new UIAlertOptions()
+                    {
+                        Title = "Debug Lot Thumbnail",
+                        Message = "Arch Value: "+VMArchitectureStats.GetArchValue(vm.Context.Architecture),
+                        Buttons = UIAlertButton.Ok((btn) => UIScreen.RemoveDialog(alert))
+                    });
+                    Texture2D roofless = null;
+                    var thumb = World.GetLotThumb(GameFacade.GraphicsDevice, (tex) => roofless = FSO.Common.Utils.TextureUtils.Decimate(tex, GameFacade.GraphicsDevice, 2, false));
+                    thumb = FSO.Common.Utils.TextureUtils.Decimate(thumb, GameFacade.GraphicsDevice, 2, false);
+                    alert.SetIcon(thumb, thumb.Width, thumb.Height);
+                    UIScreen.GlobalShowDialog(alert, true);
+                }
                 if (LiveMode) LiveModeUpdate(state, scrolled);
                 else if (CustomControl != null)
                 {
