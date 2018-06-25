@@ -75,6 +75,7 @@
     <Compile Include="UI\Panels\LiveSubpanels\UISubpanel.cs" />
     <Compile Include="UI\Panels\LotControls\UIArchTouchHelper.cs" />
     <Compile Include="UI\Panels\LotControls\UICallNeighborAlert.cs" />
+    <Compile Include="UI\Panels\LotControls\UISelectSkinAlert.cs" />
     <Compile Include="UI\Panels\UIClockPanel.cs" />
     <Compile Include="UI\Panels\UICutawayPanel.cs" />
     <Compile Include="UI\Panels\UIHouseSelectPanel.cs" />
@@ -111,6 +112,7 @@
     <ProjectReference Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\MonoGame.Framework\MonoGame.Framework.Windows.csproj">
       <Project>{7de47032-a904-4c29-bd22-2d235e8d91ba}</Project>
       <Name>MonoGame.Framework.Windows</Name>
+      <Private>False</Private>
     </ProjectReference>
     <ProjectReference Include="..\..\..\FreeSO\TSOClient\FSO.UI\FSO.UI.csproj">
       <Project>{73e2ad5b-720b-4ef3-9b7c-55931d0ec693}</Project>

@@ -8,7 +8,6 @@ using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Threading;
-using LogThis;
 using FSO.Common.Rendering.Framework;
 using FSO.LotView;
 using FSO.HIT;
@@ -98,10 +97,11 @@ namespace Simitone.Client
 
             FSO.LotView.WorldConfig.Current = new FSO.LotView.WorldConfig()
             {
-                LightingMode = 3,
+                LightingMode = settings.LightingMode,
                 SmoothZoom = settings.SmoothZoom,
                 SurroundingLots = settings.SurroundingLotMode,
-                AA = settings.AntiAlias
+                AA = settings.AntiAlias,
+                Directional = settings.DirectionalLight3D
             };
 
             OperatingSystem os = Environment.OSVersion;
@@ -123,7 +123,11 @@ namespace Simitone.Client
             GameFacade.GraphicsDevice = GraphicsDevice;
             GameFacade.GraphicsDeviceManager = Graphics;
             GameFacade.Cursor = new CursorManager(GraphicsDevice);
-            if (!GameFacade.Linux) GameFacade.Cursor.Init(GlobalSettings.Default.TS1HybridPath, true);
+            if (!GameFacade.Linux)
+            {
+                CurLoader.BmpLoaderFunc = ImageLoader.BaseFunction;
+                GameFacade.Cursor.Init(GlobalSettings.Default.TS1HybridPath, true);
+            }
 
             /** Init any computed values **/
             GameFacade.Init();

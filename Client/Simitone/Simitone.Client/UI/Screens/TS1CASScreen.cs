@@ -31,6 +31,7 @@ using Simitone.Client.UI.Panels;
 using FSO.Client.UI.Controls;
 using Simitone.Client.Utils;
 using FSO.SimAntics.Utils;
+using FSO.SimAntics.Model.TS1Platform;
 
 namespace Simitone.Client.UI.Screens
 {
@@ -970,7 +971,7 @@ namespace Simitone.Client.UI.Screens
             {
                 var marshal = new FSO.SimAntics.Marshals.VMMarshal();
                 marshal.Deserialize(file);
-
+                marshal.PlatformState = new VMTS1LotState();
                 vm.Load(marshal);
                 vm.Reset();
             }

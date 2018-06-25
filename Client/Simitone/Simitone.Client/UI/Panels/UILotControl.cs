@@ -261,6 +261,27 @@ namespace Simitone.Client.UI.Panels
                         BlockingDialog = null;
                     };
                     return;
+
+                case VMDialogType.TS1PetChoice:
+                case VMDialogType.TS1Clothes:
+                    var ts1categories = new string[] { "b", "f", "s", "l", "w", "h" };
+                    var pet = type == VMDialogType.TS1PetChoice;
+                    var stackObj = info.Caller.Thread.Stack.Last().StackObject;
+                    
+                    var skin = new UISelectSkinAlert(pet?null:(info.Caller as VMAvatar), pet?((stackObj as VMAvatar).IsCat?"cat":"dog"):ts1categories[info.Caller.Thread.TempRegisters[0]], vm);
+                    BlockingDialog = skin;
+                    UIScreen.GlobalShowDialog(skin, true);
+                    skin.OnResult += (result) =>
+                    {
+                        vm.SendCommand(new VMNetDialogResponseCmd
+                        {
+                            ActorUID = info.Caller.PersistID,
+                            ResponseCode = (byte)((result > -1)?1:0),
+                            ResponseText = result.ToString()
+                        });
+                        BlockingDialog = null;
+                    };
+                    return;
             }
 
             var alert = new UIMobileAlert(options);
@@ -432,7 +453,15 @@ namespace Simitone.Client.UI.Panels
                     {
                         obj = GotoObject;
                     }
-                    if (obj != null)
+                    if (obj is VMAvatar && state.CtrlDown)
+                    {
+                        //debug switch to avatar
+                        vm.SendCommand(new VMNetChangeControlCmd()
+                        {
+                            TargetID = obj.ObjectID
+                        });
+                    }
+                    else if (obj != null)
                     {
                         obj = obj.MultitileGroup.GetInteractionGroupLeader(obj);
                         if (obj is VMGameObject && ((VMGameObject)obj).Disabled > 0)
