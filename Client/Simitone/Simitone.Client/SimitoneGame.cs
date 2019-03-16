@@ -20,6 +20,7 @@ using FSO.HIT.Model;
 using FSO.Client;
 using FSO.Files;
 using FSO.SimAntics;
+using MSDFData;
 
 namespace Simitone.Client
 {
@@ -35,6 +36,7 @@ namespace Simitone.Client
         public SimitoneGame() : base()
         {
             GameFacade.Game = this;
+            GameThread.Game = Thread.CurrentThread;
             if (GameFacade.DirectX) TimedReferenceController.SetMode(CacheType.PERMANENT);
             Content.RootDirectory = FSOEnvironment.GFXContentDir;
 
@@ -101,7 +103,8 @@ namespace Simitone.Client
                 SmoothZoom = settings.SmoothZoom,
                 SurroundingLots = settings.SurroundingLotMode,
                 AA = settings.AntiAlias,
-                Directional = settings.DirectionalLight3D
+                Directional = settings.DirectionalLight3D,
+                Complex = true
             };
 
             OperatingSystem os = Environment.OSVersion;
@@ -204,17 +207,25 @@ namespace Simitone.Client
             try
             {
                 GameFacade.MainFont = new FSO.Client.UI.Framework.Font();
-                GameFacade.MainFont.AddSize(12, Content.Load<SpriteFont>("Fonts/Mobile_15px"));
-                GameFacade.MainFont.AddSize(15, Content.Load<SpriteFont>("Fonts/Mobile_20px"));
-                GameFacade.MainFont.AddSize(19, Content.Load<SpriteFont>("Fonts/Mobile_25px"));
-                GameFacade.MainFont.AddSize(37, Content.Load<SpriteFont>("Fonts/Mobile_50px"));
+                //GameFacade.MainFont.AddSize(12, Content.Load<SpriteFont>("Fonts/Mobile_15px"));
+                //GameFacade.MainFont.AddSize(15, Content.Load<SpriteFont>("Fonts/Mobile_20px"));
+                //GameFacade.MainFont.AddSize(19, Content.Load<SpriteFont>("Fonts/Mobile_25px"));
+                //GameFacade.MainFont.AddSize(37, Content.Load<SpriteFont>("Fonts/Mobile_50px"));
 
                 GameFacade.EdithFont = new FSO.Client.UI.Framework.Font();
-                GameFacade.EdithFont.AddSize(12, Content.Load<SpriteFont>("Fonts/Trebuchet_12px"));
-                GameFacade.EdithFont.AddSize(14, Content.Load<SpriteFont>("Fonts/Trebuchet_14px"));
+                //GameFacade.EdithFont.AddSize(12, Content.Load<SpriteFont>("Fonts/Trebuchet_12px"));
+                //GameFacade.EdithFont.AddSize(14, Content.Load<SpriteFont>("Fonts/Trebuchet_14px"));
+
+                GameFacade.VectorFont = new FSO.UI.Framework.MSDFFont(Content.Load<FieldFont>("../Fonts/mobile"));
+                GameFacade.EdithVectorFont = new FSO.UI.Framework.MSDFFont(Content.Load<FieldFont>("../Fonts/trebuchet"));
+                GameFacade.EdithVectorFont.VectorScale = 0.366f;
+                GameFacade.EdithVectorFont.Height = 15;
+                GameFacade.EdithVectorFont.YOff = 11;
+
+                FSO.UI.Framework.MSDFFont.MSDFEffect = Content.Load<Effect>("Effects/MSDFFont");
 
                 vitaboyEffect = Content.Load<Effect>("Effects/Vitaboy"+((FSOEnvironment.SoftwareDepth)?"iOS":""));
-                uiLayer = new UILayer(this, Content.Load<SpriteFont>("Fonts/FreeSO_12px"), Content.Load<SpriteFont>("Fonts/FreeSO_16px"));
+                uiLayer = new UILayer(this);
             }
             catch (Exception e)
             {

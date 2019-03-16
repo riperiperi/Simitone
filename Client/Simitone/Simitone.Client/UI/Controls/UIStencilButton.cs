@@ -18,6 +18,7 @@ namespace Simitone.Client.UI.Controls
         public Color HoverColor = Color.Lerp(UIStyle.Current.BtnNormal, UIStyle.Current.BtnActive, 0.5f);
         public Color DisabledColor = new Color(128, 128, 128, 255);
         public bool Shadow;
+        public Vector3 ShadowParam = new Vector3(3, 3, 0.25f);
         public float Alpha { get; set; }
 
         public UIStencilButton(Texture2D tex) : base(tex)
@@ -54,7 +55,7 @@ namespace Simitone.Client.UI.Controls
                     color = Color; break;
             }
             if (Shadow)
-                DrawLocalTexture(SBatch, Texture, null, new Vector2(3f, 3f), Vector2.One, Color.Black * 0.25f * Alpha);
+                DrawLocalTexture(SBatch, Texture, null, new Vector2(ShadowParam.X, ShadowParam.Y), Vector2.One, Color.Black * ShadowParam.Z * Alpha);
             DrawLocalTexture(SBatch, Texture, null, Vector2.Zero, Vector2.One, color * Alpha);
         }
     }

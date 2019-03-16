@@ -327,13 +327,12 @@ namespace Simitone.Client.UI.Panels
 
         private void DialogResponse(byte code)
         {
-            if (BlockingDialog == null || !(BlockingDialog is UIMobileAlert) || ActiveEntity == null) return;
+            if (BlockingDialog == null || !(BlockingDialog is UIMobileAlert)) return;
             BlockingDialog.Close();
             var ma = (UIMobileAlert)BlockingDialog;
             LastDialogID = 0;
             vm.SendCommand(new VMNetDialogResponseCmd
             {
-                ActorUID = ActiveEntity.PersistID,
                 ResponseCode = code,
                 ResponseText = (ma.ResponseText == null) ? "" : ma.ResponseText
             });
@@ -671,6 +670,20 @@ namespace Simitone.Client.UI.Panels
             //MouseCutRect = new Rectangle(0,0,0,0);
         }
 
+        public void SetTargetZoom(WorldZoom zoom)
+        {
+            switch (zoom)
+            {
+                case WorldZoom.Near:
+                    TargetZoom = 1f; break;
+                case WorldZoom.Medium:
+                    TargetZoom = 0.5f; break;
+                case WorldZoom.Far:
+                    TargetZoom = 0.25f; break;
+            }
+            LastZoom = World.State.Zoom;
+        }
+
         public override void Draw(UISpriteBatch batch)
         {
             //DrawLocalTexture(batch, World.State.Light.LightMap, new Rectangle(0,0, World.State.Light.LightMap.Width/3, World.State.Light.LightMap.Height/2), new Vector2());
@@ -681,6 +694,7 @@ namespace Simitone.Client.UI.Panels
             base.Draw(batch);
         }
 
+        private WorldZoom LastZoom;
         public override void Update(UpdateState state)
         {
             base.Update(state);
@@ -695,6 +709,13 @@ namespace Simitone.Client.UI.Panels
             }
             else
             {
+                if (World.State.Zoom != LastZoom)
+                {
+                    //zoom has been changed by something else. inherit the value
+                    SetTargetZoom(World.State.Zoom);
+                    LastZoom = World.State.Zoom;
+                }
+
                 float BaseScale;
                 WorldZoom targetZoom;
                 if (TargetZoom < 0.5f)

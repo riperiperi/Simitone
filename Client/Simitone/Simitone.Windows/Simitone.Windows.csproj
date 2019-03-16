@@ -74,6 +74,10 @@
       <Project>{5deb20eb-1eb7-48f9-922c-463abae56e63}</Project>
       <Name>FSO.IDE</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\FreeSO\TSOClient\FSO.SimAntics.JIT\FSO.SimAntics.JIT.csproj">
+      <Project>{b8ab3711-7b4f-4126-9bf3-4ddde9475b74}</Project>
+      <Name>FSO.SimAntics.JIT</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\FreeSO\TSOClient\FSO.UI\FSO.UI.csproj">
       <Project>{73e2ad5b-720b-4ef3-9b7c-55931d0ec693}</Project>
       <Name>FSO.UI</Name>

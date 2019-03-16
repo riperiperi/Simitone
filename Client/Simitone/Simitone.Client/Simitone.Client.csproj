@@ -64,6 +64,7 @@
     <Compile Include="UI\Panels\CAS\UIFamilyCASItem.cs" />
     <Compile Include="UI\Panels\CAS\UIFamilyCASPanel.cs" />
     <Compile Include="UI\Panels\CAS\UISimCASPanel.cs" />
+    <Compile Include="UI\Panels\Desktop\UIDesktopUCP.cs" />
     <Compile Include="UI\Panels\LiveSubpanels\Catalog\UICatalogItem.cs" />
     <Compile Include="UI\Panels\LiveSubpanels\UIButtonSubpanel.cs" />
     <Compile Include="UI\Panels\LiveSubpanels\UIBuyBrowsePanel.cs" />
@@ -102,6 +103,7 @@
     <Compile Include="UI\Screens\LoadingGameScreen.cs" />
     <Compile Include="UI\Screens\TS1CASScreen.cs" />
     <Compile Include="UI\Screens\TS1GameScreen.cs" />
+    <Compile Include="Utils\PersonGeneratorHelper.cs" />
     <Compile Include="Utils\SimitoneNeighOBJExporter.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +115,10 @@
       <Project>{7de47032-a904-4c29-bd22-2d235e8d91ba}</Project>
       <Name>MonoGame.Framework.Windows</Name>
       <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\FreeSO\Other\libs\MSDFData\MSDFData.csproj">
+      <Project>{eabea510-3e53-4f19-9f0b-75c5ca9dfa3b}</Project>
+      <Name>MSDFData</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\FreeSO\TSOClient\FSO.UI\FSO.UI.csproj">
       <Project>{73e2ad5b-720b-4ef3-9b7c-55931d0ec693}</Project>
@@ -219,6 +225,66 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\uigraphics\common\circle10px.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_bg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_build.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_buy.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_floordown.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_floorup.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_friend.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_live.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_opt.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_rotccw.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_rotcw.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_speed1.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_speed2.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_speed3.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_speed4.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_w1.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_w2.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_w3.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_w4.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_zoomm.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\desktop\d_live_zoomp.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\uigraphics\dialog\ngbh_outline.png">

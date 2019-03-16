@@ -17,6 +17,20 @@ namespace Simitone.Client.UI.Panels
     {
         public int[] Divisors = new int[]
         {
+            237,
+            328,
+            398,
+            456,
+            507,
+            556,
+            609,
+            680,
+            731,
+            781,
+            832,
+            920
+
+            /*
             140,
             243,
             278,
@@ -30,6 +44,7 @@ namespace Simitone.Client.UI.Panels
             723,
             814,
             884
+            */
         };
 
         public float OddTransition { get; set; }

@@ -16,6 +16,7 @@ using Microsoft.Xna.Framework.Input;
 using FSO.SimAntics;
 using FSO.SimAntics.NetPlay.Model.Commands;
 using FSO.HIT;
+using Simitone.Client.UI.Panels.Desktop;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -29,6 +30,7 @@ namespace Simitone.Client.UI.Panels
         public UIMainPanel MainPanel;
         public UIStencilButton ExtendPanelBtn;
         public UIModeSwitcher ModeSwitcher;
+        public UIDesktopUCP DesktopUCP;
 
         public bool PanelActive;
         public int LastCut = 0;
@@ -36,48 +38,62 @@ namespace Simitone.Client.UI.Panels
         public UISimitoneFrontend(TS1GameScreen screen)
         {
             var ui = Content.Get().CustomUI;
-
-            CutBtn = new UITwoStateButton(ui.Get("cut_btn_down.png").Get(GameFacade.GraphicsDevice));
-            CutBtn.X = screen.ScreenWidth - (256 + 15);
-            CutBtn.Y = 15;
-            CutBtn.OnButtonClick += CutButton;
-            Add(CutBtn);
-
-            Clock = new UIClockPanel(screen.vm);
-            Clock.X = screen.ScreenWidth - (334 + 15);
-            Clock.Y = 15;
             Game = screen;
-            Add(Clock);
 
-            Money = new UIMoneyPanel(screen);
-            Money.Position = new Vector2(15, screen.ScreenHeight - 172);
-            Add(Money);
+            if (!Game.Desktop)
+            {
+                CutBtn = new UITwoStateButton(ui.Get("cut_btn_down.png").Get(GameFacade.GraphicsDevice));
+                CutBtn.X = screen.ScreenWidth - (256 + 15);
+                CutBtn.Y = 15;
+                CutBtn.OnButtonClick += CutButton;
+                Add(CutBtn);
+
+                Clock = new UIClockPanel(screen.vm);
+                Clock.X = screen.ScreenWidth - (334 + 15);
+                Clock.Y = 15;
+                Add(Clock);
+
+                Money = new UIMoneyPanel(screen);
+                Money.Position = new Vector2(15, screen.ScreenHeight - 172);
+                Add(Money);
+
+                ExtendPanelBtn = new UIStencilButton(ui.Get("panel_expand.png").Get(GameFacade.GraphicsDevice));
+                ExtendPanelBtn.OnButtonClick += ExpandClicked;
+                Add(ExtendPanelBtn);
+            }
 
             MainPanel = new UIMainPanel(screen);
             MainPanel.OnEndSelect += OnEndSelect;
             MainPanel.ModeChanged += ModeChanged;
             Add(MainPanel);
 
-            ExtendPanelBtn = new UIStencilButton(ui.Get("panel_expand.png").Get(GameFacade.GraphicsDevice));
-            ExtendPanelBtn.OnButtonClick += ExpandClicked;
-            Add(ExtendPanelBtn);
-
-            var mode = new UIModeSwitcher(screen);
-            mode.Position = new Vector2(64 + 15, screen.ScreenHeight - (64 + 15));
-            mode.OnModeClick += LiveButtonClicked;
-            Add(mode);
-            ModeSwitcher = mode;
-
-            ExtendPanelBtn.Position = new Vector2(mode.X + 54, mode.Y - 50);
+            if (Game.Desktop)
+            {
+                DesktopUCP = new UIDesktopUCP(screen);
+                DesktopUCP.Position = new Vector2(15, screen.ScreenHeight - (278 + 15));
+                DesktopUCP.OnModeClick += LiveButtonClicked;
+                Add(DesktopUCP);
+            }
+            else
+            {
+                var mode = new UIModeSwitcher(screen);
+                mode.Position = new Vector2(64 + 15, screen.ScreenHeight - (64 + 15));
+                mode.OnModeClick += LiveButtonClicked;
+                Add(mode);
+                ModeSwitcher = mode;
+                ExtendPanelBtn.Position = new Vector2(mode.X + 54, mode.Y - 50);
+            }
 
             MainPanel.X = 64 + 15;
-            MainPanel.Y = mode.Y - 64;
+            if (Game.Desktop) MainPanel.X += 100;
+            MainPanel.GameResized();
+            MainPanel.Y = screen.ScreenHeight - (128 + 15);
             MainPanel.Visible = false;
 
             if (Game.vm.GetGlobalValue(32) > 0)
             {
                 MainPanel.SetMode(UIMainPanelMode.BUY);
-                ModeSwitcher.EndSwitch(MainPanel.Mode);
+                ModeSwitcher?.EndSwitch(MainPanel.Mode);
                 MainPanel.Open();
             } else
             {
@@ -87,7 +103,8 @@ namespace Simitone.Client.UI.Panels
 
         private void ModeChanged(UIMainPanelMode obj)
         {
-            Clock.SetHidden(obj != UIMainPanelMode.LIVE);
+            Clock?.SetHidden(obj != UIMainPanelMode.LIVE);
+            DesktopUCP?.SetMode(obj);
             var lotType = MainPanel.GetLotType(true);
             var hit = FSO.HIT.HITVM.Get();
             switch (obj)
@@ -140,13 +157,15 @@ namespace Simitone.Client.UI.Panels
 
         private bool LiveButtonClicked(UIMainPanelMode mode)
         {
-            if (MainPanel.PanelActive)
+            var deskAuto = Game.Desktop && (mode != UIMainPanelMode.LIVE || MainPanel.Mode != UIMainPanelMode.LIVE);
+            if (MainPanel.PanelActive || deskAuto)
             {
-                if (MainPanel.ShowingSelect)
+                if (MainPanel.ShowingSelect || deskAuto)
                 {
+                    if (!MainPanel.PanelActive) MainPanel.Open();
                     //switch to the target mode
                     MainPanel.SetMode(mode);
-                    MainPanel.SwitchAvatar.Kill();
+                    MainPanel.SwitchAvatar?.Kill();
                     return false;
                 }
                 else
@@ -169,7 +188,7 @@ namespace Simitone.Client.UI.Panels
 
         private void OnEndSelect()
         {
-            ModeSwitcher.EndSwitch(MainPanel.Mode);
+            ModeSwitcher?.EndSwitch(MainPanel.Mode);
         }
 
         private void CutButton(UIElement button)
@@ -219,45 +238,54 @@ namespace Simitone.Client.UI.Panels
             }
 
             base.Update(state);
-            if (LastCut != Game.LotControl.WallsMode)
+            if (!Game.Desktop)
             {
-                LastCut = Game.LotControl.WallsMode;
-                var ui = Content.Get().CustomUI;
-                string cutImg = "cut_btn_down.png";
-                switch (LastCut)
+                if (LastCut != Game.LotControl.WallsMode)
                 {
-                    case 1:
-                        cutImg = "cut_btn_away.png"; break;
-                    case 2:
-                        cutImg = "cut_btn_up.png"; break;
-                    case 3:
-                        cutImg = "cut_btn_roof.png"; break;
+                    LastCut = Game.LotControl.WallsMode;
+                    var ui = Content.Get().CustomUI;
+                    string cutImg = "cut_btn_down.png";
+                    switch (LastCut)
+                    {
+                        case 1:
+                            cutImg = "cut_btn_away.png"; break;
+                        case 2:
+                            cutImg = "cut_btn_up.png"; break;
+                        case 3:
+                            cutImg = "cut_btn_roof.png"; break;
+                    }
+                    CutBtn.Texture = ui.Get(cutImg).Get(GameFacade.GraphicsDevice);
                 }
-                CutBtn.Texture = ui.Get(cutImg).Get(GameFacade.GraphicsDevice);
+                if (Clock.TweenHook != ClockTween)
+                {
+                    ClockTween = Clock.TweenHook;
+                    CutBtn.X = Game.ScreenWidth - (256 + (138f * ClockTween) + 15);
+                    if (CutPanel != null) CutPanel.X = CutBtn.X - 39;
+                }
+                ModeSwitcher.LiveButton.Switching = MainPanel.ShowingSelect;
+                ExtendPanelBtn.Visible = !MainPanel.PanelActive;
             }
-            if (Clock.TweenHook != ClockTween)
-            {
-                ClockTween = Clock.TweenHook;
-                CutBtn.X = Game.ScreenWidth - (256 + (138f * ClockTween) + 15);
-                if (CutPanel != null) CutPanel.X = CutBtn.X - 39;
-            }
-            ModeSwitcher.LiveButton.Switching = MainPanel.ShowingSelect;
-            ExtendPanelBtn.Visible = !MainPanel.PanelActive;
         }
 
         public override void GameResized()
         {
             base.GameResized();
-            CutBtn.X = Game.ScreenWidth - (256 + (138f * ClockTween) + 15);
-            if (CutPanel != null) CutPanel.X = CutBtn.X - 39;
-            Clock.X = Game.ScreenWidth - (334 + 15);
-            Clock.Y = 15;
-
-            Money.Position = new Vector2(15, Game.ScreenHeight - 172);
-            var mode = ModeSwitcher;
-            mode.Position = new Vector2(64 + 15, Game.ScreenHeight - (64 + 15));
-            ExtendPanelBtn.Position = new Vector2(mode.X + 54, mode.Y - 50);
-            MainPanel.Y = mode.Y - 64;
+            if (!Game.Desktop)
+            {
+                CutBtn.X = Game.ScreenWidth - (256 + (138f * ClockTween) + 15);
+                if (CutPanel != null) CutPanel.X = CutBtn.X - 39;
+                Clock.X = Game.ScreenWidth - (334 + 15);
+                Clock.Y = 15;
+                Money.Position = new Vector2(15, Game.ScreenHeight - 172);
+                var mode = ModeSwitcher;
+                mode.Position = new Vector2(64 + 15, Game.ScreenHeight - (64 + 15));
+                ExtendPanelBtn.Position = new Vector2(mode.X + 54, mode.Y - 50);
+            }
+            else
+            {
+                DesktopUCP.Position = new Vector2(15, Game.ScreenHeight - (278 + 15));
+            }
+            MainPanel.Y = Game.ScreenHeight - (128 + 15);
         }
     }
 }

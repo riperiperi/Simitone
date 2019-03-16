@@ -30,10 +30,10 @@ namespace Simitone.Windows
             var useDX = true;
             var path = gameLocator.FindTheSimsOnline();
 
-            if (useDX) GlobalSettings.Default.AntiAlias = false;
-
             FSOEnvironment.Enable3D = false;
             bool ide = false;
+            bool aa = false;
+            bool jit = false;
             #region User resolution parmeters
 
             foreach (var arg in args)
@@ -56,6 +56,12 @@ namespace Simitone.Windows
                                 break;
                             case "3d":
                                 FSOEnvironment.Enable3D = true;
+                                break;
+                            case "aa":
+                                aa = true;
+                                break;
+                            case "jit":
+                                jit = true;
                                 break;
                         }
                     }
@@ -87,12 +93,18 @@ namespace Simitone.Windows
                 GlobalSettings.Default.TS1HybridPath = gameLocator.FindTheSims1();
                 GlobalSettings.Default.ClientVersion = "0";
                 GlobalSettings.Default.LightingMode = 3;
-                GlobalSettings.Default.AntiAlias = true;
+                GlobalSettings.Default.AntiAlias = aa ? 2 : 0;
+                GlobalSettings.Default.ComplexShaders = true;
 
                 GameFacade.DirectX = useDX;
                 World.DirectX = useDX;
 
                 if (ide) new FSO.IDE.VolcanicStartProxy().InitVolcanic();
+
+                var assemblies = new FSO.SimAntics.JIT.Runtime.AssemblyStore();
+                //var globals = new TS1.Scripts.Dummy(); //make sure scripts assembly is loaded
+                if (jit) assemblies.InitAOT();
+                FSO.SimAntics.Engine.VMTranslator.INSTANCE = new FSO.SimAntics.JIT.Runtime.VMAOTTranslator(assemblies);
 
                 SimitoneGame game = new SimitoneGame();
                 var form = (Form)Form.FromHandle(game.Window.Handle);

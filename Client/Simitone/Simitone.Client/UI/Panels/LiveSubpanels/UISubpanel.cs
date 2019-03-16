@@ -19,7 +19,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
         {
             Opacity = 0;
             var screenWidth = GameFacade.Screens.CurrentUIScreen.ScreenWidth;
-            Size = new Vector2(screenWidth-342, 128);
+            Size = new Vector2(screenWidth - (342 + (game.Desktop?100:0)), 128);
             GameFacade.Screens.Tween.To(this, 0.3f, new Dictionary<string, float>() { { "Opacity", 1f } });
             Game = game;
         }
@@ -27,7 +27,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
         public override void GameResized()
         {
             var screenWidth = UIScreen.Current.ScreenWidth;
-            Size = new Vector2(screenWidth - 342, 128);
+            Size = new Vector2(screenWidth - (342 + (Game.Desktop ? 100 : 0)), 128);
             base.GameResized();
         }
 

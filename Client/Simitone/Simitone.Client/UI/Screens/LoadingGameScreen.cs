@@ -39,6 +39,7 @@ namespace Simitone.Client.UI.Screens
         public UISimitoneLogo Logo;
         public UISimitoneLoadLabel LastLabel;
         public bool LoadingComplete;
+        public UITweenInstance LogoTween;
 
         private bool Closing = false;
         private float _i;
@@ -83,19 +84,19 @@ namespace Simitone.Client.UI.Screens
             GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "InterpolatedAnimation", 1f } }, TweenQuad.EaseOut);
 
             LoadProgress = new UILoadProgress();
-            LoadProgress.Position = (new Vector2(ScreenWidth, ScreenHeight) - new Vector2(938, 112))/2;
+            LoadProgress.Position = (new Vector2(ScreenWidth, ScreenHeight) - new Vector2(1012, 128))/2;
             Add(LoadProgress);
 
             Logo = new UISimitoneLogo();
             Logo.Position = new Vector2(ScreenWidth, ScreenHeight) / 2;
             Add(Logo);
-            GameFacade.Screens.Tween.To(Logo, 1f, new Dictionary<string, float>() { { "Y", ScreenHeight/4 }, { "ScaleX", 0.5f }, { "ScaleY", 0.5f } }, TweenQuad.EaseOut);
+            LogoTween = GameFacade.Screens.Tween.To(Logo, 1f, new Dictionary<string, float>() { { "Y", ScreenHeight/4 }, { "ScaleX", 0.5f }, { "ScaleY", 0.5f } }, TweenQuad.EaseOut);
 
             InterpolatedAnimation = InterpolatedAnimation;
 
             (new Thread(() => {
                 FSO.Content.Content.Init(GlobalSettings.Default.StartupPath, GameFacade.GraphicsDevice);
-                VMContext.InitVMConfig();
+                VMContext.InitVMConfig(true);
                 lock (this)
                 {
                     LoadingComplete = true;
@@ -123,6 +124,20 @@ namespace Simitone.Client.UI.Screens
                     Bg.Parent.Remove(Bg);
                 }, 500);
             }, 750);
+        }
+
+        public override void GameResized()
+        {
+            base.GameResized();
+            GameFacade.Screens.Tween.Stop(LogoTween, true);
+            Bg.Position = (new Vector2(ScreenWidth, ScreenHeight)) / 2;
+            ProgressDiag.Position = new Vector2(0, ScreenHeight / 2 - 75);
+            TextDiag.Position = new Vector2(0, ScreenHeight * 0.75f - 37);
+            LoadProgress.Position = (new Vector2(ScreenWidth, ScreenHeight) - new Vector2(1012, 128)) / 2;
+            Logo.Position = new Vector2(ScreenWidth, ScreenHeight/2) / 2;
+            if (LastLabel != null) LastLabel.Position = new Vector2(ScreenWidth / 2, ScreenHeight * 0.75f);
+
+            InterpolatedAnimation = InterpolatedAnimation;
         }
 
         public ContentLoadingProgress LastProgress = ContentLoadingProgress.Invalid;

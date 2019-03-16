@@ -28,6 +28,7 @@ using Microsoft.Xna.Framework.Input;
 using Simitone.Client.UI.Controls;
 using Simitone.Client.UI.Panels;
 using Simitone.Client.UI.Panels.WorldUI;
+using Simitone.Client.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,6 +42,7 @@ namespace Simitone.Client.UI.Screens
     {
         public UIContainer WindowContainer;
         public bool Downtown;
+        public bool Desktop = !FSOEnvironment.SoftwareKeyboard;
 
         public UILotControl LotControl { get; set; }
         public UISimitoneFrontend Frontend { get; set; }
@@ -87,6 +89,7 @@ namespace Simitone.Client.UI.Screens
                         Bg.Visible = false;
                         World.Visible = true;
                         //ucp.SetMode(UIUCP.UCPMode.LotMode);
+                        LotControl.SetTargetZoom(targ);
                         if (m_ZoomLevel != value) vm.Context.World.InitiateSmoothZoom(targ);
                         vm.Context.World.State.Zoom = targ;
                         m_ZoomLevel = value;
@@ -191,6 +194,8 @@ namespace Simitone.Client.UI.Screens
 
         public void NeighSelection(NeighSelectionMode mode)
         {
+            Content.Get().Neighborhood.PreparePersonDataFromObject = PersonGeneratorHelper.PreparePersonDataFromObject;
+            Content.Get().Neighborhood.AddMissingNeighbors();
             var nbd = (ushort)((mode == NeighSelectionMode.MoveInMagic) ? 7 : 4);
             TS1NeighPanel = new UINeighborhoodSelectionPanel(nbd);
             var switcher = new UINeighbourhoodSwitcher(TS1NeighPanel, nbd, mode != NeighSelectionMode.Normal);
@@ -233,6 +238,7 @@ namespace Simitone.Client.UI.Screens
 
         public void MoveInAndPlay(short house, int family, UIElement switcher)
         {
+            MoveInFamily = null;
             var neigh = Content.Get().Neighborhood;
             var fami = neigh.GetFamily((ushort)family);
             neigh.SetFamilyForHouse(house, fami, true);
@@ -342,6 +348,25 @@ namespace Simitone.Client.UI.Screens
             if (state.NewKeys.Contains(Keys.D2)) ChangeSpeedTo(2);
             if (state.NewKeys.Contains(Keys.D3)) ChangeSpeedTo(3);
             if (state.NewKeys.Contains(Keys.P)) ChangeSpeedTo(0);
+
+            if (state.NewKeys.Contains(Keys.F12))
+            {
+                ChangeSpeedTo(1);
+                //running 10000 ticks
+                var timer = new System.Diagnostics.Stopwatch();
+                timer.Start();
+
+                for (int i=0; i<10000; i++)
+                {
+                    vm.Tick();
+                }
+
+                timer.Stop();
+                UIScreen.GlobalShowDialog(new UIMobileAlert(new UIAlertOptions() {
+                    Title = "Benchmark",
+                    Message = "10000 ticks took " + timer.ElapsedMilliseconds + "ms."
+                }), true);
+            }
 
             if (World != null)
             {
@@ -454,7 +479,7 @@ namespace Simitone.Client.UI.Screens
         public void InitializeLot(VMMarshal marshal)
         {
             InitializeLot();
-            vm.MyUID = uint.MaxValue;
+            vm.MyUID = 1;
             vm.Load(marshal);
 
             vm.TS1State.ActivateFamily(vm, ActiveFamily);
@@ -462,7 +487,7 @@ namespace Simitone.Client.UI.Screens
             var settings = GlobalSettings.Default;
             var myClient = new VMNetClient
             {
-                PersistID = uint.MaxValue,
+                PersistID = 1,
                 RemoteIP = "local",
                 AvatarState = new VMNetAvatarPersistState()
                 {
@@ -470,7 +495,7 @@ namespace Simitone.Client.UI.Screens
                     DefaultSuits = new VMAvatarDefaultSuits(settings.DebugGender),
                     BodyOutfit = settings.DebugBody,
                     HeadOutfit = settings.DebugHead,
-                    PersistID = uint.MaxValue,
+                    PersistID = 1,
                     SkinTone = (byte)settings.DebugSkin,
                     Gender = (short)(settings.DebugGender ? 1 : 0),
                     Permissions = FSO.SimAntics.Model.TSOPlatform.VMTSOAvatarPermissions.Admin,
@@ -489,6 +514,44 @@ namespace Simitone.Client.UI.Screens
             this.Add(Frontend);
         }
 
+        public void ShowLoadErrors(List<VMLoadError> errors, bool verbose)
+        {
+            var errorMsg = GameFacade.Strings.GetString("153", "16");
+
+            if (verbose)
+            {
+                errorMsg += "\n";
+                foreach (var error in errors)
+                {
+                    errorMsg += "\n" + error.ToString();
+                }
+            }
+
+            //signal thru the VM so we can stop time appropriately
+            vm.LastSpeedMultiplier = vm.SpeedMultiplier;
+            vm.SpeedMultiplier = 0;
+            vm.SignalDialog(new VMDialogInfo
+            {
+                Block = true,
+                Caller = null,
+                Yes = "OK",
+                DialogID = 0,
+                Title = GameFacade.Strings.GetString("153", "17"),
+                Message = errorMsg,
+            });
+
+            /*
+            CloseAlert = new UIMobileAlert(new FSO.Client.UI.Controls.UIAlertOptions
+            {
+                Title = GameFacade.Strings.GetString("153", "17"), //missing objects!
+                Message = errorMsg,
+                Buttons = UIAlertButton.Ok(
+                        (b) => { CloseAlert.Close(); CloseAlert = null; }
+                        )
+            });
+            */
+        }
+
         public void InitializeLot(string lotName, bool external)
         {
             if (lotName == "" || lotName[0] == '!') return;
@@ -502,12 +565,14 @@ namespace Simitone.Client.UI.Screens
                     vm.TS1State.ActivateFamily(vm, ActiveFamily);
                 }
                 BlueprintReset(lotName, null);
+                
+                if (vm.LoadErrors.Count > 0) GameThread.NextUpdate((state) => ShowLoadErrors(vm.LoadErrors, true));
 
-                vm.MyUID = uint.MaxValue;
+                vm.MyUID = 1;
                 var settings = GlobalSettings.Default;
                 var myClient = new VMNetClient
                 {
-                    PersistID = uint.MaxValue,
+                    PersistID = 1,
                     RemoteIP = "local",
                     AvatarState = new VMNetAvatarPersistState()
                     {
@@ -515,7 +580,7 @@ namespace Simitone.Client.UI.Screens
                         DefaultSuits = new VMAvatarDefaultSuits(settings.DebugGender),
                         BodyOutfit = settings.DebugBody,
                         HeadOutfit = settings.DebugHead,
-                        PersistID = uint.MaxValue,
+                        PersistID = 1,
                         SkinTone = (byte)settings.DebugSkin,
                         Gender = (short)(settings.DebugGender ? 1 : 0),
                         Permissions = FSO.SimAntics.Model.TSOPlatform.VMTSOAvatarPermissions.Admin,
@@ -557,7 +622,7 @@ namespace Simitone.Client.UI.Screens
         public void LoadSurrounding(short houseID)
         {
             return;
-            var surrounding = new NBHm(new OBJ(File.OpenRead(@"C:\Users\Rhys\Desktop\nb2.obj")));
+            var surrounding = new NBHm(new OBJ(File.OpenRead(@"C:\Users\Rhys\Desktop\fso 2018\nb4.obj")));
             NBHmHouse myH = null;
             var myHeight = vm.Context.Blueprint.InterpAltitude(new Vector3(0, 0, 0));
             if (!surrounding.Houses.TryGetValue(houseID, out myH)) return;
@@ -653,7 +718,8 @@ namespace Simitone.Client.UI.Screens
             switch (type)
             {
                 case VMEventType.TS1BuildBuyChange:
-                    Frontend.ModeSwitcher.UpdateBuildBuy();
+                    Frontend?.ModeSwitcher?.UpdateBuildBuy();
+                    Frontend?.DesktopUCP?.UpdateBuildBuy();
                     break;
             }
         }
@@ -803,6 +869,8 @@ namespace Simitone.Client.UI.Screens
         {
             CleanupLastWorld();
             NeighSelection(NeighSelectionMode.Normal);
+            Downtown = false;
+            SavedLot = null;
         }
     }
 

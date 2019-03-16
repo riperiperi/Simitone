@@ -777,9 +777,9 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
 
         public override void GameResized()
         {
-            CatContainer.Size = new Vector2(UIScreen.Current.ScreenWidth - 342, 128);
-            if (ChoosingSub) Reset();
             base.GameResized();
+            CatContainer.Size = new Vector2(Size.X, 128);
+            if (ChoosingSub) Reset();
         }
 
         public override void Update(UpdateState state)

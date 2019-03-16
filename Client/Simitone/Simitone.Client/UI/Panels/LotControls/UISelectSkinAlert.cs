@@ -126,7 +126,7 @@ namespace Simitone.Client.UI.Panels.LotControls
             }
             Camera = new BasicCamera(GameFacade.GraphicsDevice, new Vector3(5, 1, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
             Camera.NearPlane = 0.001f;
-            Scene = new _3DTargetScene(GameFacade.GraphicsDevice, Camera, new Point(1030, 500), GlobalSettings.Default.AntiAlias?8:0);
+            Scene = new _3DTargetScene(GameFacade.GraphicsDevice, Camera, new Point(1030, 500), (GlobalSettings.Default.AntiAlias > 0)?8:0);
             Scene.Initialize(GameFacade.Scenes);
 
             InitializeLot();

@@ -249,7 +249,7 @@ namespace Simitone.Client.UI.Screens
 
             var moving = 0;
 
-            if (state.MouseStates.Count > 0)
+            if (state.MouseStates.Count(x => x.MouseState.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed) > 0)
             {
                 if (XLast == -1)
                 {
@@ -698,11 +698,6 @@ namespace Simitone.Client.UI.Screens
 
             vm.Context.Clock.Minutes = 0;
             vm.Context.Clock.Hours = 12;
-
-            if (state.NewKeys.Contains(Microsoft.Xna.Framework.Input.Keys.LeftControl))
-            {
-                SetMode(UICASMode.SimEdit);
-            }
 
             var disableAccept = false;
             switch (Mode)

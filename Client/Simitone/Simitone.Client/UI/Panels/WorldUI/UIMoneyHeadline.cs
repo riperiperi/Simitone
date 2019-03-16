@@ -59,8 +59,10 @@ namespace Simitone.Client.UI.Panels.WorldUI
             batch.Draw(MoneyBG, new Vector2(MoneyTarget.Width-9.6f, Headline.Duration / 2), new Rectangle(24, 0, 12, 24), Model.UIStyle.Current.Bg * opacity,
                 0, Vector2.Zero, new Vector2(0.8f, 0.8f), SpriteEffects.None, 0);
             Style.Color.A = (byte)(opacity*255);
-            batch.DrawString(Style.SpriteFont, Text, new Vector2(5, Headline.Duration/2), Style.Color);
+
             batch.End();
+            Style.VFont.Draw(GD, Text, new Vector2(5, 1), Style.Color, new Vector2(Style.Scale), null);
+            
             GD.SetRenderTarget(null);
         }
 

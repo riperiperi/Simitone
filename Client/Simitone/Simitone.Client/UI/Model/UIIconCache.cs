@@ -63,7 +63,7 @@ namespace Simitone.Client.UI.Model
             HeadCamera.Target = pos2;
             HeadCamera.ProjectionOrigin = new Vector2(74/2, 74/2);
 
-            var HeadScene = new _3DTargetScene(GameFacade.GraphicsDevice, HeadCamera, new Point(74, 74), (GlobalSettings.Default.AntiAlias) ? 8 : 0);
+            var HeadScene = new _3DTargetScene(GameFacade.GraphicsDevice, HeadCamera, new Point(74, 74), (GlobalSettings.Default.AntiAlias > 0) ? 8 : 0);
             HeadScene.ID = "UIPieMenuHead";
 
             m_Head.Scene = HeadScene;

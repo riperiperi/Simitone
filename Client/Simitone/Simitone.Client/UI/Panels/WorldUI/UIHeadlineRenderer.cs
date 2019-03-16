@@ -183,18 +183,6 @@ namespace Simitone.Client.UI.Panels.WorldUI
                     batch.Draw(Cross, new Vector2(Texture.Width / 2 - Cross.Width / 2, Texture.Height / 2 - Cross.Height / 4), Color.White);
                 }
 
-                if (DrawSkill)
-                {
-                    batch.Draw(WhitePx, new Rectangle(88, 4, 71, 41), new Color(92, 92, 92));
-                    var font = GameFacade.MainFont.GetNearest(14).Font;
-
-                    Vector2 fontOrigin = font.MeasureString(SkillString) / 2;
-                    batch.DrawString(font, SkillString, new Vector2(88 + 35, 15) - fontOrigin * 0.60f, new Color(255, 249, 157), 0, new Vector2(), 0.60f, SpriteEffects.None, 0);
-
-                    fontOrigin = font.MeasureString(SpeedString) / 2;
-                    batch.DrawString(font, SpeedString, new Vector2(88 + 35, 34) - fontOrigin * 0.60f, new Color(255, 249, 157), 0, new Vector2(), 0.60f, SpriteEffects.None, 0);
-                }
-
                 batch.End();
                 GD.SetRenderTarget(null);
                 Invalidated = false;

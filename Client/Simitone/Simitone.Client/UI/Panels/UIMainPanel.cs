@@ -110,32 +110,39 @@ namespace Simitone.Client.UI.Panels
             var ui = Content.Get().CustomUI;
             Div = ui.Get("panel_div.png").Get(GameFacade.GraphicsDevice);
 
-            FloorUpBtn = new UIStencilButton(ui.Get("level_up.png").Get(GameFacade.GraphicsDevice));
-            FloorUpBtn.Position = new Vector2(80, 10);
-            FloorUpBtn.OnButtonClick += (b) => { if (Game.Level < 5) Game.Level++; };
-            Add(FloorUpBtn);
+            if (!Game.Desktop)
+            {
+                FloorUpBtn = new UIStencilButton(ui.Get("level_up.png").Get(GameFacade.GraphicsDevice));
+                FloorUpBtn.Position = new Vector2(80, 10);
+                FloorUpBtn.OnButtonClick += (b) => { if (Game.Level < 5) Game.Level++; };
+                Add(FloorUpBtn);
 
-            FloorDownBtn = new UIStencilButton(ui.Get("level_down.png").Get(GameFacade.GraphicsDevice));
-            FloorDownBtn.Position = new Vector2(80, 68);
-            FloorDownBtn.OnButtonClick += (b) => { if (Game.Level > 1) Game.Level--; };
-            Add(FloorDownBtn);
+                FloorDownBtn = new UIStencilButton(ui.Get("level_down.png").Get(GameFacade.GraphicsDevice));
+                FloorDownBtn.Position = new Vector2(80, 68);
+                FloorDownBtn.OnButtonClick += (b) => { if (Game.Level > 1) Game.Level--; };
+                Add(FloorDownBtn);
 
-            FloorLabel = new UILabel();
-            FloorLabel.CaptionStyle = FloorLabel.CaptionStyle.Clone();
-            FloorLabel.CaptionStyle.Size = 15;
-            FloorLabel.CaptionStyle.Color = UIStyle.Current.Text;
-            FloorLabel.Alignment = TextAlignment.Middle | TextAlignment.Center;
-            FloorLabel.Position = new Vector2(80, 64);
-            FloorLabel.Size = new Vector2(51, 18);
+                FloorLabel = new UILabel();
+                FloorLabel.CaptionStyle = FloorLabel.CaptionStyle.Clone();
+                FloorLabel.CaptionStyle.Size = 15;
+                FloorLabel.CaptionStyle.Color = UIStyle.Current.Text;
+                FloorLabel.Alignment = TextAlignment.Middle | TextAlignment.Center;
+                FloorLabel.Position = new Vector2(80, 64);
+                FloorLabel.Size = new Vector2(51, 18);
 
-            FloorLabelShadow = new UILabel();
-            FloorLabelShadow.CaptionStyle = FloorLabel.CaptionStyle.Clone();
-            FloorLabelShadow.Alignment = TextAlignment.Middle | TextAlignment.Center;
-            FloorLabelShadow.Position = new Vector2(83, 67);
-            FloorLabelShadow.Size = new Vector2(51, 18);
-            FloorLabelShadow.CaptionStyle.Color = Color.Black * 0.5f;
-            Add(FloorLabelShadow);
-            Add(FloorLabel);
+                FloorLabelShadow = new UILabel();
+                FloorLabelShadow.CaptionStyle = FloorLabel.CaptionStyle.Clone();
+                FloorLabelShadow.Alignment = TextAlignment.Middle | TextAlignment.Center;
+                FloorLabelShadow.Position = new Vector2(83, 67);
+                FloorLabelShadow.Size = new Vector2(51, 18);
+                FloorLabelShadow.CaptionStyle.Color = Color.Black * 0.5f;
+                Add(FloorLabelShadow);
+                Add(FloorLabel);
+
+                Divider = new UIImage(ui.Get("divider.png").Get(GameFacade.GraphicsDevice));
+                Divider.Position = new Vector2(146, 29);
+                Add(Divider);
+            }
 
             HideButton = new UIStencilButton(ui.Get("panel_hide.png").Get(GameFacade.GraphicsDevice));
             HideButton.X = Game.ScreenWidth - (50 + 64 + 15);
@@ -143,12 +150,8 @@ namespace Simitone.Client.UI.Panels
             HideButton.OnButtonClick += (b) => { Close(); };
             Add(HideButton);
 
-            Divider = new UIImage(ui.Get("divider.png").Get(GameFacade.GraphicsDevice));
-            Divider.Position = new Vector2(146, 29);
-            Add(Divider);
-
             Switcher = new UICategorySwitcher();
-            Switcher.Position = new Vector2(164, 0);
+            Switcher.Position = new Vector2(164 - (Game.Desktop ? 16 : 0), 0);
             Switcher.InitCategories(LiveCategories);
             Switcher.OnCategorySelect += Switcher_OnCategorySelect;
             Switcher.OnOpen += Switcher_OnOpen;
@@ -159,7 +162,7 @@ namespace Simitone.Client.UI.Panels
                 fade.Opacity = 0;
             }
 
-            Game.LotControl.QueryPanel.Position = new Vector2(53, -5);
+            Game.LotControl.QueryPanel.Position = new Vector2(53 + (Game.Desktop ? 25 : 0), -5);
             Add(Game.LotControl.QueryPanel);
             Game.LotControl.PickupPanel.Opacity = 0;
             Add(Game.LotControl.PickupPanel);
@@ -312,8 +315,18 @@ namespace Simitone.Client.UI.Panels
 
         public UIElement[] GetFadeables()
         {
-            return new UIElement[]
+            if (Game.Desktop)
             {
+                return new UIElement[]
+                {
+                Switcher.MainButton,
+                HideButton
+                };
+            }
+            else
+            {
+                return new UIElement[]
+                {
                 FloorUpBtn,
                 FloorDownBtn,
                 FloorLabel,
@@ -321,7 +334,8 @@ namespace Simitone.Client.UI.Panels
                 Switcher.MainButton,
                 Divider,
                 HideButton
-            };
+                };
+            }
         }
 
         public override void Draw(UISpriteBatch batch)
@@ -347,13 +361,16 @@ namespace Simitone.Client.UI.Panels
             base.Update(state);
             Visible = _CurWidth > 0;
 
-            if (Game.Level != LastFloor)
+            if (!Game.Desktop)
             {
-                LastFloor = Game.Level;
-                FloorLabel.Caption = FloorNames[LastFloor - 1];
-                FloorLabelShadow.Caption = FloorNames[LastFloor - 1];
-                FloorDownBtn.Disabled = LastFloor == 1;
-                FloorUpBtn.Disabled = LastFloor == 5;
+                if (Game.Level != LastFloor)
+                {
+                    LastFloor = Game.Level;
+                    FloorLabel.Caption = FloorNames[LastFloor - 1];
+                    FloorLabelShadow.Caption = FloorNames[LastFloor - 1];
+                    FloorDownBtn.Disabled = LastFloor == 1;
+                    FloorUpBtn.Disabled = LastFloor == 5;
+                }
             }
 
             Game.LotControl.PickupPanel.Visible = Game.LotControl.PickupPanel.Opacity > 0;
@@ -370,7 +387,7 @@ namespace Simitone.Client.UI.Panels
         public void Open()
         {
             Visible = true;
-            GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "CurWidth", GameFacade.Screens.CurrentUIScreen.ScreenWidth-(64+15)} }, TweenQuad.EaseOut);
+            GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "CurWidth", GameFacade.Screens.CurrentUIScreen.ScreenWidth-X} }, TweenQuad.EaseOut);
             foreach (var fade in GetFadeables())
             {
                 GameFacade.Screens.Tween.To(fade, 0.3f, new Dictionary<string, float>() { { "Opacity", 1f } });
@@ -420,8 +437,8 @@ namespace Simitone.Client.UI.Panels
         public override void GameResized()
         {
             base.GameResized();
-            if (PanelActive) CurWidth = Game.ScreenWidth - (64 + 15);
-            HideButton.X = Game.ScreenWidth - (50 + 64 + 15);
+            if (PanelActive) CurWidth = Game.ScreenWidth - X;
+            HideButton.X = Game.ScreenWidth - (50 + X);
         }
     }
 

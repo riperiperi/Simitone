@@ -76,7 +76,7 @@ namespace Simitone.Client.UI.Panels
             for (int i = 0; i < Group.Objects.Count; i++)
             {
                 var target = Group.Objects[i];
-                target.SetRoom(65534);
+                target.SetRoom(65535);
                 if (target is VMGameObject) ((ObjectComponent)target.WorldUI).ForceDynamic = true;
                 CursorTiles[i] = vm.Context.CreateObjectInstance(0x00000437, new LotTilePos(target.Position), FSO.LotView.Model.Direction.NORTH, true).Objects[0];
                 CursorTiles[i].SetPosition(target.Position, Direction.NORTH, vm.Context);

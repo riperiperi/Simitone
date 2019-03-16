@@ -60,6 +60,7 @@ namespace Simitone.Client.UI.Panels
             this.ButtonStyle = new TextStyle
             {
                 Font = GameFacade.MainFont,
+                VFont = GameFacade.VectorFont,
                 Size = 12,
                 Color = new Color(0xA5, 0xC3, 0xD6),
                 SelectedColor = new Color(0x00, 0xFF, 0xFF),
@@ -133,7 +134,7 @@ namespace Simitone.Client.UI.Panels
             HeadCamera.Position = new Vector3(0, pos2.Y, 12.5f);
             HeadCamera.Target = pos2;
 
-            HeadScene = new _3DTargetScene(GameFacade.GraphicsDevice, HeadCamera, new Point((int)(200 * TrueScale), (int)(200 * TrueScale)), (GlobalSettings.Default.AntiAlias) ? 8 : 0);
+            HeadScene = new _3DTargetScene(GameFacade.GraphicsDevice, HeadCamera, new Point((int)(200 * TrueScale), (int)(200 * TrueScale)), (GlobalSettings.Default.AntiAlias > 0) ? 8 : 0);
             HeadScene.ID = "UIPieMenuHead";
 
             m_Head.Scene = HeadScene;
