@@ -14,7 +14,7 @@ namespace Simitone.Windows.GameLocator
 
         public string FindTheSims1()
         {
-            return "game1/";
+            return "game/TheSims";
         }
     }
 }
