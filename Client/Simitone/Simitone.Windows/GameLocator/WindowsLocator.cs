@@ -47,7 +47,7 @@ namespace Simitone.Windows.GameLocator
                 if (Array.Exists(softwareKey.GetSubKeyNames(), delegate (string s) { return s.Equals("Maxis", StringComparison.InvariantCultureIgnoreCase); }))
                 {
                     RegistryKey maxisKey = softwareKey.OpenSubKey("Maxis");
-                    if (Array.Exists(maxisKey.GetSubKeyNames(), delegate (string s) { return s.Equals("The Sims Online", StringComparison.InvariantCultureIgnoreCase); }))
+                    if (Array.Exists(maxisKey.GetSubKeyNames(), delegate (string s) { return s.Equals("The Sims", StringComparison.InvariantCultureIgnoreCase); }))
                     {
                         RegistryKey tsoKey = maxisKey.OpenSubKey("The Sims");
                         string installDir = (string)tsoKey.GetValue("InstallPath");
