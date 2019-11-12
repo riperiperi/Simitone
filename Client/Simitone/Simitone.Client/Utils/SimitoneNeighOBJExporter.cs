@@ -59,15 +59,7 @@ namespace Simitone.Client.Utils
 
                     var house = Content.Get().Neighborhood.GetHouse(num);
 
-                    World world;
-                    if (FSOEnvironment.Enable3D)
-                    {
-                        world = new FSO.LotView.RC.WorldRC(GameFacade.GraphicsDevice);
-                    }
-                    else
-                    {
-                        world = new FSO.LotView.World(GameFacade.GraphicsDevice);
-                    }
+                    World world = new FSO.LotView.World(GameFacade.GraphicsDevice);
 
                     world.Opacity = 1;
                     GameFacade.Scenes.Add(world);
@@ -117,7 +109,7 @@ namespace Simitone.Client.Utils
                     facade.GROUND_SUBDIV = blueprint.Width;
                     facade.FLOOR_RES_PER_TILE = 4;
                     facade.LotName = "p"+num.ToString();
-                    facade.Generate(GameFacade.GraphicsDevice, (WorldRC)world, blueprint);
+                    facade.Generate(GameFacade.GraphicsDevice, world, blueprint);
                     facade.AppendOBJ(io, filename, indCount, voff / 3);
                     facade.AppendMTL(mtlIO, Path.GetDirectoryName(path));
                     indCount = facade.LastIndex;

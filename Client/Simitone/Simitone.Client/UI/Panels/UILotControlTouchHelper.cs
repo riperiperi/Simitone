@@ -54,9 +54,10 @@ namespace Simitone.Client.UI.Panels
         private int LastMouseWheel;
         private bool ScrollWheelInvalid;
         private int ZoomFreezeTime;
+        public bool _3D;
         public override void Update(UpdateState state)
         {
-            var _3d = FSOEnvironment.Enable3D;
+            var _3d = _3D;
             base.Update(state);
             bool rotated = false;
 
@@ -204,7 +205,7 @@ namespace Simitone.Client.UI.Panels
 
                         if (_3d)
                         {
-                            var rcState = ((WorldStateRC)Master.World.State);
+                            var rcState = Master.Rotate;
                             if (LastAngleX != null)
                             {
                                 float rot = rcState.RotationX - (float)DirectionUtils.Difference(RotateAngle, LastAngleX.Value);

@@ -179,6 +179,7 @@ namespace Simitone.Client.UI.Panels
             {
                 var loc = locations.GetString(i).Split(',');
                 var num = int.Parse(loc[0].TrimStart());
+                if (num == 99) continue;
                 var button = new UINeighborhoodHouseButton(num, SelectHouse, config.Scale);
                 button.Position = new Vector2(int.Parse(loc[1].TrimStart()), int.Parse(loc[2].TrimStart()));
                 HousePositions[num] = button.Position;
@@ -383,11 +384,11 @@ namespace Simitone.Client.UI.Panels
             var yOff = new Vector2(Offsets.XOff, -Offsets.BaseYOff) / HouseScale;
             var yOff2 = yOff;
             yOff2.Y -= Offsets.AddYOff / (HouseScale);
-            DrawLocalTexture(batch, HouseTex, null, new Vector2(-Offsets.Width, -Offsets.Height)/ HouseScale + yOff, new Vector2(1f / HouseScale, 1f / HouseScale));
             if (AlphaTime > 0)
             {
-                DrawLocalTexture(batch, HouseOpenTex, null, new Vector2(-Offsets.Width, -Offsets.Height)/ HouseScale + yOff2, new Vector2(1f / HouseScale, 1f / HouseScale), Color.White * AlphaTime);
+                DrawLocalTexture(batch, HouseOpenTex, null, new Vector2(-Offsets.Width, -Offsets.Height)/ HouseScale + yOff2, new Vector2(1f / HouseScale, 1f / HouseScale));
             }
+            DrawLocalTexture(batch, HouseTex, null, new Vector2(-Offsets.Width, -Offsets.Height) / HouseScale + yOff, new Vector2(1f / HouseScale, 1f / HouseScale), Color.White * (1 - AlphaTime));
         }
 
         public override void Removed()

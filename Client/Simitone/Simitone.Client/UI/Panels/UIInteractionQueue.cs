@@ -18,6 +18,7 @@ using FSO.Common;
 using Simitone.Client.UI.Controls;
 using FSO.Client;
 using Simitone.Client.UI.Model;
+using FSO.SimAntics.Model;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -37,6 +38,13 @@ namespace Simitone.Client.UI.Panels
             this.vm = vm;
             this.QueueOwner = QueueOwner;
             QueueItems = new List<UIIQTrackEntry>();
+        }
+
+        public short GetElemPriority(VMQueuedAction elem, int i)
+        {
+            return (elem == QueueOwner.Thread.ActiveAction) ?
+                        (QueueOwner as VMAvatar)?.GetPersonData(VMPersonDataVariable.Priority) ?? elem.Priority
+                        : elem.Priority;
         }
 
         public override void Update(UpdateState state)
@@ -59,8 +67,9 @@ namespace Simitone.Client.UI.Panels
                     if (elem == itemui.Interaction)
                     {
                         found = true;
+                        var priority = GetElemPriority(elem, j);
                         if (position != itemui.QueuePosition) itemui.TweenToPosition(position);
-                        if (elem.Cancelled && elem.Priority <= 0 && !itemui.Cancelled)
+                        if (elem.NotifyIdle && priority <= 0 && !itemui.Cancelled)
                         {
                             itemui.Cancelled = true;
                             itemui.UI.SetCancelled();
@@ -170,7 +179,8 @@ namespace Simitone.Client.UI.Panels
                 if (queue[i] == itemui.Interaction)
                 {
                     HITVM.Get().PlaySoundEvent(UISounds.CallSend);
-                    if (!(itemui.Interaction.Cancelled && itemui.Interaction.Priority <= 0))
+                    var priority = GetElemPriority(itemui.Interaction, i);
+                    if (!(itemui.Interaction.NotifyIdle && priority <= 0))
                     {
                         vm.SendCommand(new VMNetInteractionResultCmd
                         {
@@ -195,7 +205,8 @@ namespace Simitone.Client.UI.Panels
                 if (queue[i] == itemui.Interaction)
                 {
                     HITVM.Get().PlaySoundEvent(UISounds.QueueDelete);
-                    if (!(itemui.Interaction.Cancelled && itemui.Interaction.Priority <= 0))
+                    var priority = GetElemPriority(itemui.Interaction, i);
+                    if (!(itemui.Interaction.NotifyIdle && priority <= 0))
                     {
                         vm.SendCommand(new VMNetInteractionCancelCmd
                         {

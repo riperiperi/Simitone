@@ -1,6 +1,7 @@
 ﻿using FSO.Client;
 using FSO.Common.Rendering.Framework;
 using FSO.Common.Rendering.Framework.Camera;
+using FSO.Common.Utils;
 using FSO.Content;
 using FSO.SimAntics;
 using FSO.SimAntics.Model;
@@ -91,7 +92,9 @@ namespace Simitone.Client.UI.Model
             HeadScene.Add(m_Head);
 
             HeadScene.Draw(GameFacade.GraphicsDevice);
-            return HeadScene.Target;
+            var copy = TextureUtils.CopyAccelerated(GameFacade.GraphicsDevice, HeadScene.Target);
+            HeadScene.Dispose();
+            return copy;
         }
     }
 }

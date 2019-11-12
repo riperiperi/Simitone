@@ -61,7 +61,7 @@ namespace Simitone.Client.UI.Panels.WorldUI
             Style.Color.A = (byte)(opacity*255);
 
             batch.End();
-            Style.VFont.Draw(GD, Text, new Vector2(5, 1), Style.Color, new Vector2(Style.Scale), null);
+            Style.VFont.Draw(GD, Text, new Vector2(5, Headline.Duration / 2 - 2), Style.Color, new Vector2(Style.Scale), null);
             
             GD.SetRenderTarget(null);
         }

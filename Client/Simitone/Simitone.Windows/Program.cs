@@ -93,13 +93,14 @@ namespace Simitone.Windows
                 GlobalSettings.Default.TS1HybridPath = gameLocator.FindTheSims1();
                 GlobalSettings.Default.ClientVersion = "0";
                 GlobalSettings.Default.LightingMode = 3;
-                GlobalSettings.Default.AntiAlias = aa ? 2 : 0;
+                GlobalSettings.Default.AntiAlias = aa ? 1 : 0;
                 GlobalSettings.Default.ComplexShaders = true;
+                GlobalSettings.Default.EnableTransitions = true;
 
                 GameFacade.DirectX = useDX;
                 World.DirectX = useDX;
 
-                if (ide) new FSO.IDE.VolcanicStartProxy().InitVolcanic();
+                if (ide) new FSO.IDE.VolcanicStartProxy().InitVolcanic(args);
 
                 var assemblies = new FSO.SimAntics.JIT.Runtime.AssemblyStore();
                 //var globals = new TS1.Scripts.Dummy(); //make sure scripts assembly is loaded

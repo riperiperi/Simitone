@@ -32,6 +32,7 @@ using FSO.Client.UI.Controls;
 using Simitone.Client.Utils;
 using FSO.SimAntics.Utils;
 using FSO.SimAntics.Model.TS1Platform;
+using FSO.LotView;
 
 namespace Simitone.Client.UI.Screens
 {
@@ -659,12 +660,13 @@ namespace Simitone.Client.UI.Screens
             vm.Update();
             if (World != null && !Initialized)
             {
-                var rcs = (World.State as WorldStateRC);
-                if (rcs != null)
+                World.State.DisableSmoothRotation = true;
+                if (GraphicsModeControl.Mode == GlobalGraphicsMode.Full3D)
                 {
-                    Cam = (WorldCamera3D)rcs.Camera;
-                    rcs.FixedCam = true;
-                    rcs.CameraMode = true;
+                    World.State.SetCameraType(World, FSO.LotView.Utils.Camera.CameraControllerType.FirstPerson, 0);
+                    var fp = World.State.Cameras.CameraFirstPerson;
+                    Cam = fp.Camera;
+                    fp.FixedCam = true;
                 }
                 SetMode(UICASMode.FamilySelect);
                 SetFamilies();
@@ -681,7 +683,7 @@ namespace Simitone.Client.UI.Screens
                         World.State.Level = 2;
                         World.State.DrawRoofs = true;
                         vm.Context.Blueprint.Cutaway = new bool[vm.Context.Blueprint.Cutaway.Length];
-                        vm.Context.Blueprint.Damage.Add(new FSO.LotView.Model.BlueprintDamage(FSO.LotView.Model.BlueprintDamageType.WALL_CUT_CHANGED));
+                        vm.Context.Blueprint.Changes.SetFlag(BlueprintGlobalChanges.WALL_CUT_CHANGED);
                     }
                     break;
                 default:
@@ -691,7 +693,7 @@ namespace Simitone.Client.UI.Screens
                         World.State.DrawRoofs = false;
                         vm.Context.Blueprint.Cutaway = VMArchitectureTools.GenerateRoomCut(vm.Context.Architecture, World.State.Level, World.State.CutRotation, 
                             new HashSet<uint>(vm.Context.RoomInfo.Where(x => x.Room.IsOutside == false).Select(x => (uint)x.Room.RoomID)));
-                        vm.Context.Blueprint.Damage.Add(new FSO.LotView.Model.BlueprintDamage(FSO.LotView.Model.BlueprintDamageType.WALL_CUT_CHANGED));
+                        vm.Context.Blueprint.Changes.SetFlag(BlueprintGlobalChanges.WALL_CUT_CHANGED);
                     }
                     break;
             }
@@ -942,15 +944,7 @@ namespace Simitone.Client.UI.Screens
         {
             CleanupLastWorld();
             
-            if (FSOEnvironment.Enable3D)
-            {
-                var rc = new FSO.LotView.RC.WorldRC(GameFacade.GraphicsDevice);
-                World = rc;
-            }
-            else
-            {
-                World = new FSO.LotView.World(GameFacade.GraphicsDevice);
-            }
+            World = new FSO.LotView.World(GameFacade.GraphicsDevice);
 
             World.Opacity = 1;
             GameFacade.Scenes.Add(World);

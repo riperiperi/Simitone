@@ -13,6 +13,7 @@ using FSO.Files.Formats.IFF.Chunks;
 using FSO.Files.RC;
 using FSO.HIT;
 using FSO.LotView;
+using FSO.LotView.Model;
 using FSO.SimAntics;
 using FSO.SimAntics.Engine.TSOTransaction;
 using FSO.SimAntics.Marshals;
@@ -334,21 +335,34 @@ namespace Simitone.Client.UI.Screens
                 case 2: vm.SpeedMultiplier = 3; break;
                 case 3: vm.SpeedMultiplier = 10; break;
             }
+            vm.ResetTickAlign();
         }
 
         public override void Update(FSO.Common.Rendering.Framework.Model.UpdateState state)
         {
             GameFacade.Game.IsFixedTimeStep = (vm == null || vm.Ready);
-
-            Visible = (World?.State as FSO.LotView.RC.WorldStateRC)?.CameraMode != true;
+            
+            Visible = World?.Visible != false && World?.State.Cameras.HideUI != true;
             GameFacade.Game.IsMouseVisible = Visible;
 
-            base.Update(state);
             if (state.NewKeys.Contains(Keys.D1)) ChangeSpeedTo(1);
             if (state.NewKeys.Contains(Keys.D2)) ChangeSpeedTo(2);
             if (state.NewKeys.Contains(Keys.D3)) ChangeSpeedTo(3);
             if (state.NewKeys.Contains(Keys.P)) ChangeSpeedTo(0);
+            if (state.NewKeys.Contains(Keys.D0))
+            {
+                //frame advance
+                ChangeSpeedTo(1);
+                GameThread.NextUpdate((FSO.Common.Rendering.Framework.Model.UpdateState ustate) => ChangeSpeedTo(0));
+            }
+            base.Update(state);
 
+            if (state.NewKeys.Contains(Microsoft.Xna.Framework.Input.Keys.F12) && GraphicsModeControl.Mode != GlobalGraphicsMode.Full2D)
+            {
+                GraphicsModeControl.ChangeMode((GraphicsModeControl.Mode == GlobalGraphicsMode.Full3D) ? GlobalGraphicsMode.Hybrid2D : GlobalGraphicsMode.Full3D);
+            }
+
+            /*
             if (state.NewKeys.Contains(Keys.F12))
             {
                 ChangeSpeedTo(1);
@@ -367,6 +381,7 @@ namespace Simitone.Client.UI.Screens
                     Message = "10000 ticks took " + timer.ElapsedMilliseconds + "ms."
                 }), true);
             }
+            */
 
             if (World != null)
             {
@@ -438,14 +453,7 @@ namespace Simitone.Client.UI.Screens
         public void InitializeLot()
         {
             CleanupLastWorld();
-
-            if (FSOEnvironment.Enable3D)
-            {
-                World = new FSO.LotView.RC.WorldRC(GameFacade.GraphicsDevice);
-            } else
-            {
-                World = new FSO.LotView.World(GameFacade.GraphicsDevice);
-            }
+            World = new FSO.LotView.World(GameFacade.GraphicsDevice);
 
             World.Opacity = 1;
             GameFacade.Scenes.Add(World);

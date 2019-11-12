@@ -22,16 +22,17 @@ namespace Simitone.Client.UI.Panels.WorldUI
         private static Texture2D WhitePx;
         private static int[] GroupOffsets =
         {
-            0x000,
-            0x064,
-            0x190,
-            0x0C8,
-            0x12C,
-            0x1F4,
-            0x258,
-            0x000, //algorithmic
-            0x2BC,
-            0x320
+            0,
+            100,
+            400,
+            200,
+            300,
+            500,
+            600,
+            0, //algorithmic
+            700,
+            800,
+            900,
         };
         private static int[] ZoomToDiv =
         {

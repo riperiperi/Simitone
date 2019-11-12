@@ -46,6 +46,7 @@ namespace Simitone.Client.UI.Panels
     {
         private UIMouseEventRef MouseEvt;
         public bool MouseIsOn;
+        public I3DRotate Rotate { get { return World.State.Cameras.Camera3D; } }
 
         private UIPieMenu PieMenu;
 
@@ -664,7 +665,7 @@ namespace Simitone.Client.UI.Panels
             if (vm.Context.Blueprint != null && LastCuts != null)
             {
                 vm.Context.Blueprint.Cutaway = LastCuts;
-                vm.Context.Blueprint.Damage.Add(new FSO.LotView.Model.BlueprintDamage(FSO.LotView.Model.BlueprintDamageType.WALL_CUT_CHANGED));
+                vm.Context.Blueprint.Changes.SetFlag(BlueprintGlobalChanges.WALL_CUT_CHANGED);
             }
 
             //MouseCutRect = new Rectangle(0,0,0,0);
@@ -702,12 +703,19 @@ namespace Simitone.Client.UI.Panels
             if (!vm.Ready || vm.Context.Architecture == null) return;
 
             //handling smooth scaled zoom
-            if (FSOEnvironment.Enable3D)
+            var camType = World.State.Cameras.ActiveType;
+            Touch._3D = camType != FSO.LotView.Utils.Camera.CameraControllerType._2D;
+            if (World.State.Cameras.ActiveType == FSO.LotView.Utils.Camera.CameraControllerType._3D)
             {
-                var s3d = ((WorldStateRC)World.State);
-                s3d.Zoom3D += ((9.75f - (TargetZoom-0.25f)*10) - s3d.Zoom3D) / 10;
+                if (World.BackbufferScale != 1) World.BackbufferScale = 1;
+                var s3d = World.State.Cameras.Camera3D;
+                if (TargetZoom < -0.25f)
+                {
+                    TargetZoom -= (TargetZoom - 0.25f) * (1f - (float)Math.Pow(0.975f, 60f / FSOEnvironment.RefreshRate));
+                }
+                s3d.Zoom3D += ((9.75f - (TargetZoom - 0.25f) * 5.7f) - s3d.Zoom3D) / 10;
             }
-            else
+            else if (World.State.Cameras.ActiveType == FSO.LotView.Utils.Camera.CameraControllerType._2D)
             {
                 if (World.State.Zoom != LastZoom)
                 {
@@ -861,6 +869,12 @@ namespace Simitone.Client.UI.Panels
                     PieMenu = null;
                 }
 
+                if (state.NewKeys.Contains(Keys.F11))
+                {
+                    var utils = new FSO.SimAntics.Test.CollisionTestUtils();
+                    utils.VerifyAllCollision(vm);
+                }
+
                 if (state.NewKeys.Contains(Keys.F8))
                 {
                     UIMobileAlert alert = null;
@@ -928,7 +942,7 @@ namespace Simitone.Client.UI.Panels
                     {
                         LastCuts = new bool[vm.Context.Architecture.Width * vm.Context.Architecture.Height];
                         vm.Context.Blueprint.Cutaway = LastCuts;
-                        vm.Context.Blueprint.Damage.Add(new FSO.LotView.Model.BlueprintDamage(FSO.LotView.Model.BlueprintDamageType.WALL_CUT_CHANGED));
+                        vm.Context.Blueprint.Changes.SetFlag(BlueprintGlobalChanges.WALL_CUT_CHANGED);
                         for (int i = 0; i < LastCuts.Length; i++) LastCuts[i] = true;
                     }
                     else if (WallsMode == 1)
@@ -940,7 +954,7 @@ namespace Simitone.Client.UI.Panels
                     {
                         LastCuts = new bool[vm.Context.Architecture.Width * vm.Context.Architecture.Height];
                         vm.Context.Blueprint.Cutaway = LastCuts;
-                        vm.Context.Blueprint.Damage.Add(new FSO.LotView.Model.BlueprintDamage(FSO.LotView.Model.BlueprintDamageType.WALL_CUT_CHANGED));
+                        vm.Context.Blueprint.Changes.SetFlag(BlueprintGlobalChanges.WALL_CUT_CHANGED);
                     }
                     LastWallMode = WallsMode;
                 }
@@ -988,7 +1002,7 @@ namespace Simitone.Client.UI.Panels
                         if (recut > 1 || notableChange || LastRectCutNotable)
                         {
                             vm.Context.Blueprint.Cutaway = finalCut;
-                            vm.Context.Blueprint.Damage.Add(new FSO.LotView.Model.BlueprintDamage(FSO.LotView.Model.BlueprintDamageType.WALL_CUT_CHANGED));
+                            vm.Context.Blueprint.Changes.SetFlag(BlueprintGlobalChanges.WALL_CUT_CHANGED);
                         }
                         LastRectCutNotable = notableChange;
                     }

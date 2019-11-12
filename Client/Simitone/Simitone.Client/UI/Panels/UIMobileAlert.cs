@@ -234,7 +234,7 @@ namespace Simitone.Client.UI.Panels
         }
 
         private bool m_TextDirty = false;
-        protected override void CalculateMatrix()
+        public override void CalculateMatrix()
         {
             base.CalculateMatrix();
             m_TextDirty = true;

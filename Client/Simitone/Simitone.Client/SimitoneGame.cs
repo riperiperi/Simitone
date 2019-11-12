@@ -21,6 +21,7 @@ using FSO.Client;
 using FSO.Files;
 using FSO.SimAntics;
 using MSDFData;
+using FSO.LotView.Model;
 
 namespace Simitone.Client
 {
@@ -97,6 +98,18 @@ namespace Simitone.Client
                 settings.GraphicsHeight = (int)(GraphicsDevice.Viewport.Height / FSOEnvironment.DPIScaleFactor);
             }
 
+            var initialMode = (GlobalGraphicsMode)settings.GlobalGraphicsMode;
+            if (FSOEnvironment.Enable3D)
+            {
+                if (initialMode == GlobalGraphicsMode.Full2D) initialMode = GlobalGraphicsMode.Full3D;
+            }
+            else
+            {
+                initialMode = GlobalGraphicsMode.Full2D;
+            }
+            GraphicsModeControl.ChangeMode(initialMode);
+            GraphicsModeControl.ModeChanged += SaveGraphicsModePreference;
+
             FSO.LotView.WorldConfig.Current = new FSO.LotView.WorldConfig()
             {
                 LightingMode = settings.LightingMode,
@@ -104,7 +117,8 @@ namespace Simitone.Client
                 SurroundingLots = settings.SurroundingLotMode,
                 AA = settings.AntiAlias,
                 Directional = settings.DirectionalLight3D,
-                Complex = true
+                Complex = settings.ComplexShaders,
+                EnableTransitions = settings.EnableTransitions
             };
 
             OperatingSystem os = Environment.OSVersion;
@@ -115,6 +129,7 @@ namespace Simitone.Client
             FSO.Content.Content.TS1HybridBasePath = GlobalSettings.Default.TS1HybridPath;
             if (FSOEnvironment.Enable3D) FSO.Files.RC.DGRP3DMesh.InitRCWorkers();
             //FSO.Content.Content.Init(GlobalSettings.Default.StartupPath, GraphicsDevice);
+            FSO.SimAntics.VMAvatar.MissingIconProvider = Simitone.Client.UI.Model.UIIconCache.GetObject;
             base.Initialize();
 
             GameFacade.GameThread = Thread.CurrentThread;
@@ -169,6 +184,12 @@ namespace Simitone.Client
             {
                 GameFacade.GraphicsDeviceManager.ToggleFullScreen();
             }
+        }
+
+        private void SaveGraphicsModePreference(GlobalGraphicsMode obj)
+        {
+            GlobalSettings.Default.GlobalGraphicsMode = (int)obj;
+            GlobalSettings.Default.Save();
         }
 
         /// <summary>

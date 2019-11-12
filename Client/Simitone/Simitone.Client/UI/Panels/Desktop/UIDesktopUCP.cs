@@ -226,15 +226,21 @@ namespace Simitone.Client.UI.Panels.Desktop
             UpdateZoomButton();
         }
 
+        private FSO.LotView.Utils.Camera.ICameraController GetActiveCamera()
+        {
+            //my god, why have you foresaken me?
+            return Game.vm?.Context?.World?.State?.Cameras?.ActiveCamera;
+        }
+
         private void ZoomControl(UIElement button)
         {
-            if (FSOEnvironment.Enable3D) return;
+            if (GetActiveCamera()?.UseZoomHold != false && Game.InLot) return;
             Game.ZoomLevel = (Game.ZoomLevel + ((button == ZoomInButton) ? -1 : 1));
         }
 
         private void RotateCounterClockwise(UIElement button)
         {
-            if (FSOEnvironment.Enable3D) return;
+            if (GetActiveCamera()?.UseRotateHold != false && Game.InLot) return;
             var newRot = (Game.Rotation - 1);
             if (newRot < 0) newRot = 3;
             Game.Rotation = newRot;
@@ -242,7 +248,7 @@ namespace Simitone.Client.UI.Panels.Desktop
 
         private void RotateClockwise(UIElement button)
         {
-            if (FSOEnvironment.Enable3D) return;
+            if (GetActiveCamera()?.UseRotateHold != false && Game.InLot) return;
             Game.Rotation = (Game.Rotation + 1) % 4;
         }
 
@@ -330,11 +336,23 @@ namespace Simitone.Client.UI.Panels.Desktop
 
                 if (nofocus)
                 {
-                    if (FSOEnvironment.Enable3D)
+                    var world = Game.vm.Context.World;
+                    var cameras = world.State.Cameras;
+                    var activeCamera = cameras.ActiveCamera;
+                    if (activeCamera.UseRotateHold)
                     {
                         //if the zoom or rotation buttons are down, gradually change their values.
-                        if (RotateCWButton.IsDown || state.KeyboardState.IsKeyDown(Keys.OemPeriod)) ((WorldStateRC)Game.vm.Context.World.State).RotationX += 2f / FSOEnvironment.RefreshRate;
-                        if (RotateCCWButton.IsDown || state.KeyboardState.IsKeyDown(Keys.OemComma)) ((WorldStateRC)Game.vm.Context.World.State).RotationX -= 2f / FSOEnvironment.RefreshRate;
+                        var cam = Game.vm.Context.World.State.Cameras.Camera3D;
+                        if (RotateCWButton.IsDown || state.KeyboardState.IsKeyDown(Keys.OemPeriod)) cam.RotationX += 2f / FSOEnvironment.RefreshRate;
+                        if (RotateCCWButton.IsDown || state.KeyboardState.IsKeyDown(Keys.OemComma)) cam.RotationX -= 2f / FSOEnvironment.RefreshRate;
+                    }
+                    else
+                    {
+                        if (keys.Contains(Keys.OemComma)) RotateCounterClockwise(null);
+                        if (keys.Contains(Keys.OemPeriod)) RotateClockwise(null);
+                    }
+                    if (activeCamera.UseZoomHold)
+                    {
                         if (ZoomInButton.IsDown || (state.KeyboardState.IsKeyDown(Keys.OemPlus) && !state.CtrlDown)) Game.LotControl.TargetZoom = Math.Max(0.25f, Math.Min(Game.LotControl.TargetZoom + 1f / FSOEnvironment.RefreshRate, 2));
                         if (ZoomOutButton.IsDown || (state.KeyboardState.IsKeyDown(Keys.OemMinus) && !state.CtrlDown)) Game.LotControl.TargetZoom = Math.Max(0.25f, Math.Min(Game.LotControl.TargetZoom - 1f / FSOEnvironment.RefreshRate, 2));
                     }
@@ -342,8 +360,6 @@ namespace Simitone.Client.UI.Panels.Desktop
                     {
                         if (keys.Contains(Keys.OemPlus) && !state.CtrlDown && !ZoomInButton.Disabled) { Game.ZoomLevel -= 1; UpdateZoomButton(); }
                         if (keys.Contains(Keys.OemMinus) && !state.CtrlDown && !ZoomOutButton.Disabled) { Game.ZoomLevel += 1; UpdateZoomButton(); }
-                        if (keys.Contains(Keys.OemComma)) RotateCounterClockwise(null);
-                        if (keys.Contains(Keys.OemPeriod)) RotateClockwise(null);
                     }
                     if (keys.Contains(Keys.PageDown)) { if (Game.Level > 1) Game.Level--; }
                     if (keys.Contains(Keys.PageUp)) { if (Game.Level < 5) Game.Level++; }
