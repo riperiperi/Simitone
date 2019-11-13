@@ -10,7 +10,7 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '**/Simitone.sln'
+  solution: '/Client/Simitone/Simitone.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
@@ -35,6 +35,12 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     msbuildArgs: /t:Simitone_Windows
+- task: NuGetCommand@2
+  inputs:
+    command: 'restore'
+    restoreSolution: '$(solution)'
+    feedsToUse: 'select'
+    restoreDirectory: '$(System.DefaultWorkingDirectory)/packages'
 
 - task: VSTest@2
   inputs:
