@@ -10,7 +10,7 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '/Client/Simitone/Simitone.sln'
+  solution: './Client/Simitone/Simitone.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
