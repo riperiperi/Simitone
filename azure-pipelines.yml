@@ -34,7 +34,7 @@ steps:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
-    msbuildArgs: /t:Simitone.Windows
+    msbuildArgs: /t:Simitone_Windows
 
 - task: VSTest@2
   inputs:
