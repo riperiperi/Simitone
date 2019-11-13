@@ -34,12 +34,16 @@ steps:
   inputs:
     restoreSolution: './FreeSO/TSOClient/FreeSO.sln'
 
+- powershell: cd ./FreeSO/TSOClient/FSO.SimAntics.JIT.Roslyn/; dotnet restore; cd ../../../
+  name: RestoreRoslyn
+  continueOnError: true
+
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-    msbuildArgs: /t:Simitone_Windows
+    msbuildArgs: '/t:Simitone_Windows /p:Configuration=Release;OutDir=$(Build.ArtifactStagingDirectory)'
+
 - task: NuGetCommand@2
   inputs:
     command: 'restore'
@@ -51,3 +55,9 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'SimitoneWindows'
+    publishLocation: 'Container'
