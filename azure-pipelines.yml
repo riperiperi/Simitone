@@ -29,6 +29,11 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 
+- task: NuGetCommand@2
+  name: RestoreFreeSOAsWellBecauseReasons
+  inputs:
+    restoreSolution: './FreeSO/TSOClient/FreeSO.sln'
+
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
