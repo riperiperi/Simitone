@@ -19,7 +19,7 @@ steps:
   submodules: recursive
   persistCredentials: true
 
-- powershell: ./Simitone/FreeSO/Other/libs/FSOMonoGame/Protobuild.exe
+- powershell: ./FreeSO/Other/libs/FSOMonoGame/Protobuild.exe
   name: Protobuild
 
 - task: NuGetToolInstaller@1
