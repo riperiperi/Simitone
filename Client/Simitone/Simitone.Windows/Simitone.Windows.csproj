@@ -43,8 +43,92 @@
     <Compile Include="GameLocator\LinuxLocator.cs" />
     <Compile Include="GameLocator\MacOSLocator.cs" />
     <Compile Include="GameLocator\WindowsLocator.cs" />
+    <Compile Include="GameStartProxy.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\MonogameLinker.cs" />
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\MonoGame.Framework\obj\Linux\AnyCPU\Release\MonoGame.Framework.dll" Condition="Exists('..\..\..\FreeSO\Other\libs\FSOMonoGame\MonoGame.Framework\obj\Linux\AnyCPU\Release\MonoGame.Framework.dll')">
+      <Link>Monogame\Linux\MonoGame.Framework.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\MonoGame.Framework\obj\WindowsGL\AnyCPU\Release\MonoGame.Framework.dll">
+      <Link>Monogame\WindowsGL\MonoGame.Framework.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\MonoGame.Framework\obj\Windows\AnyCPU\Release\MonoGame.Framework.dll">
+      <Link>Monogame\Windows\MonoGame.Framework.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\SharpDX.D3DCompiler.dll">
+      <Link>Monogame\Windows\SharpDX.D3DCompiler.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\SharpDX.D3DCompiler.xml">
+      <Link>Monogame\Windows\SharpDX.D3DCompiler.xml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\SharpDX.Direct2D1.dll">
+      <Link>Monogame\Windows\SharpDX.Direct2D1.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\SharpDX.Direct2D1.xml">
+      <Link>Monogame\Windows\SharpDX.Direct2D1.xml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\SharpDX.Direct3D11.dll">
+      <Link>Monogame\Windows\SharpDX.Direct3D11.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\SharpDX.Direct3D11.xml">
+      <Link>Monogame\Windows\SharpDX.Direct3D11.xml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\net40\SharpDX.dll">
+      <Link>Monogame\Windows\SharpDX.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\SharpDX.DXGI.dll">
+      <Link>Monogame\Windows\SharpDX.DXGI.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\SharpDX.DXGI.xml">
+      <Link>Monogame\Windows\SharpDX.DXGI.xml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\net40\SharpDX.MediaFoundation.dll">
+      <Link>Monogame\Windows\SharpDX.MediaFoundation.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\net40\SharpDX.MediaFoundation.xml">
+      <Link>Monogame\Windows\SharpDX.MediaFoundation.xml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\net40\SharpDX.XAudio2.dll">
+      <Link>Monogame\Windows\SharpDX.XAudio2.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\net40\SharpDX.XAudio2.xml">
+      <Link>Monogame\Windows\SharpDX.XAudio2.xml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\net40\SharpDX.XInput.dll">
+      <Link>Monogame\Windows\SharpDX.XInput.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\net40\SharpDX.XInput.xml">
+      <Link>Monogame\Windows\SharpDX.XInput.xml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\FreeSO\Other\libs\FSOMonoGame\ThirdParty\Dependencies\SharpDX\net40\SharpDX.xml">
+      <Link>Monogame\Windows\SharpDX.xml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sdl2.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="soft_oal.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

@@ -3,10 +3,13 @@ using FSO.Common;
 using FSO.LotView;
 using Simitone.Client;
 using Simitone.Windows.GameLocator;
+using Simitone.Windows.Utils;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
@@ -25,10 +28,22 @@ namespace Simitone.Windows
         [STAThread]
         static void Main(string[] args)
         {
-            var gameLocator = new WindowsLocator();
+            AppDomain.CurrentDomain.AssemblyResolve += OnAssemblyResolve;
 
-            var useDX = true;
-            var path = gameLocator.FindTheSimsOnline();
+            OperatingSystem os = Environment.OSVersion;
+            PlatformID pid = os.Platform;
+
+            ILocator gameLocator;
+            bool linux = pid == PlatformID.MacOSX || pid == PlatformID.Unix;
+            if (linux && Directory.Exists("/Users"))
+                gameLocator = new MacOSLocator();
+            else if (linux)
+                gameLocator = new LinuxLocator();
+            else
+                gameLocator = new WindowsLocator();
+
+            var useDX = !linux;
+            var path = gameLocator.FindTheSims1();
 
             FSOEnvironment.Enable3D = false;
             bool ide = false;
@@ -63,12 +78,26 @@ namespace Simitone.Windows
                             case "jit":
                                 jit = true;
                                 break;
+                            case "dx":
+                            case "dx11":
+                                useDX = true;
+                                break;
+                            case "gl":
+                            case "ogl":
+                                useDX = false;
+                                break;
+                            case "touch":
+                                FSOEnvironment.SoftwareKeyboard = true;
+                                break;
+                            case "nosound":
+                                FSOEnvironment.NoSound = true;
+                                break;
                         }
                     }
                 }
             }
-
             #endregion
+            useDX = MonogameLinker.Link(useDX);
 
             FSO.Files.ImageLoaderHelpers.BitmapFunction = BitmapReader;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -90,15 +119,12 @@ namespace Simitone.Windows
 
                 GlobalSettings.Default.StartupPath = path;
                 GlobalSettings.Default.TS1HybridEnable = true;
-                GlobalSettings.Default.TS1HybridPath = gameLocator.FindTheSims1();
+                GlobalSettings.Default.TS1HybridPath = path;
                 GlobalSettings.Default.ClientVersion = "0";
                 GlobalSettings.Default.LightingMode = 3;
                 GlobalSettings.Default.AntiAlias = aa ? 1 : 0;
                 GlobalSettings.Default.ComplexShaders = true;
                 GlobalSettings.Default.EnableTransitions = true;
-
-                GameFacade.DirectX = useDX;
-                World.DirectX = useDX;
 
                 if (ide) new FSO.IDE.VolcanicStartProxy().InitVolcanic(args);
 
@@ -107,17 +133,36 @@ namespace Simitone.Windows
                 if (jit) assemblies.InitAOT();
                 FSO.SimAntics.Engine.VMTranslator.INSTANCE = new FSO.SimAntics.JIT.Runtime.VMAOTTranslator(assemblies);
 
-                SimitoneGame game = new SimitoneGame();
-                var form = (Form)Form.FromHandle(game.Window.Handle);
-                if (form != null) form.FormClosing += Form_FormClosing;
-                game.Run();
-                game.Dispose();
+                var start = new GameStartProxy();
+                start.Start(useDX);
             }
         }
 
         private static void Form_FormClosing(object sender, FormClosingEventArgs e)
         {
             e.Cancel = !(GameFacade.Screens.CurrentUIScreen?.CloseAttempt() ?? true);
+        }
+
+        private static System.Reflection.Assembly OnAssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            try
+            {
+                var name = args.Name;
+                if (name.StartsWith("FSO.Scripts"))
+                {
+                    return AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(x => x.FullName == name);
+                }
+                else
+                {
+                    var assemblyPath = Path.Combine(MonogameLinker.AssemblyDir, args.Name.Substring(0, name.IndexOf(',')) + ".dll");
+                    var assembly = Assembly.LoadFrom(assemblyPath);
+                    return assembly;
+                }
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
