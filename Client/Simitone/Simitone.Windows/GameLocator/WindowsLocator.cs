@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -13,35 +14,37 @@ namespace Simitone.Windows.GameLocator
         public string FindTheSimsOnline()
         {
             return "";
-            string Software = "";
+            //string Software = "";
 
-            using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
-            {
-                //Find the path to TSO on the user's system.
-                RegistryKey softwareKey = hklm.OpenSubKey("SOFTWARE");
+            //using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
+            //{
+            //    //Find the path to TSO on the user's system.
+            //    RegistryKey softwareKey = hklm.OpenSubKey("SOFTWARE");
 
-                if (Array.Exists(softwareKey.GetSubKeyNames(), delegate (string s) { return s.Equals("Maxis", StringComparison.InvariantCultureIgnoreCase); }))
-                {
-                    RegistryKey maxisKey = softwareKey.OpenSubKey("Maxis");
-                    if (Array.Exists(maxisKey.GetSubKeyNames(), delegate (string s) { return s.Equals("The Sims Online", StringComparison.InvariantCultureIgnoreCase); }))
-                    {
-                        RegistryKey tsoKey = maxisKey.OpenSubKey("The Sims Online");
-                        string installDir = (string)tsoKey.GetValue("InstallDir");
-                        installDir += "\\TSOClient\\";
-                        return installDir.Replace('\\', '/');
-                    }
-                }
-            }
-            return @"C:\Program Files\Maxis\The Sims Online\TSOClient\".Replace('\\', '/');
+            //    if (Array.Exists(softwareKey.GetSubKeyNames(), delegate (string s) { return s.Equals("Maxis", StringComparison.InvariantCultureIgnoreCase); }))
+            //    {
+            //        RegistryKey maxisKey = softwareKey.OpenSubKey("Maxis");
+            //        if (Array.Exists(maxisKey.GetSubKeyNames(), delegate (string s) { return s.Equals("The Sims Online", StringComparison.InvariantCultureIgnoreCase); }))
+            //        {
+            //            RegistryKey tsoKey = maxisKey.OpenSubKey("The Sims Online");
+            //            string installDir = (string)tsoKey.GetValue("InstallDir");
+            //            installDir += "\\TSOClient\\";
+            //            return installDir.Replace('\\', '/');
+            //        }
+            //    }
+            //}
+            //return @"C:\Program Files\Maxis\The Sims Online\TSOClient\".Replace('\\', '/');
         }
 
         public string FindTheSims1()
         {
-            string Software = "";
+            // Search relative directory similar to how macOS and Linux works; allows portability
+            string localDir = @"../The Sims/";
+            if (File.Exists(Path.Combine(localDir, "GameData", "Behavior.iff"))) return localDir;
 
             using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
             {
-                //Find the path to TSO on the user's system.
+                //Find the path to TS1 on the user's system.
                 RegistryKey softwareKey = hklm.OpenSubKey("SOFTWARE");
 
                 if (Array.Exists(softwareKey.GetSubKeyNames(), delegate (string s) { return s.Equals("Maxis", StringComparison.InvariantCultureIgnoreCase); }))
@@ -56,6 +59,7 @@ namespace Simitone.Windows.GameLocator
                     }
                 }
             }
+            // Fall back to the default install location if the other two checks fail
             return @"C:\Program Files (x86)\Maxis\The Sims\".Replace('\\', '/');
         }
 
