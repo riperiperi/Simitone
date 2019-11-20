@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.IO;
 
 namespace Simitone.Windows.GameLocator
 {
@@ -9,11 +7,18 @@ namespace Simitone.Windows.GameLocator
     {
         public string FindTheSimsOnline()
         {
-            return "game/TSOClient/";
+            return "";
+            //string localDir = @"../The Sims Online/TSOClient/";
+            //if (File.Exists(Path.Combine(localDir, "tuning.dat"))) return localDir;
+
+            //return "game/TSOClient/";
         }
 
         public string FindTheSims1()
         {
+            string localDir = @"../The Sims/";
+            if (File.Exists(Path.Combine(localDir, "GameData", "Behavior.iff"))) return localDir;
+
             return "game1/";
         }
     }
