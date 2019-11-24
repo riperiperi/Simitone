@@ -378,7 +378,7 @@ namespace Simitone.Client.UI.Panels
             if (Mode != UIMainPanelMode.LIVE)
             {
                 Game.vm.SpeedMultiplier = -1;
-            } else if (Game.vm.SpeedMultiplier < 0)
+            } else if (Game.vm.SpeedMultiplier == -1)
             {
                 Game.vm.SpeedMultiplier = 0;
             }

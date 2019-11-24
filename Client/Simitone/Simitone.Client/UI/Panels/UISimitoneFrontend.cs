@@ -230,9 +230,8 @@ namespace Simitone.Client.UI.Panels
             if (state.NewKeys.Contains(Keys.Space))
             {
                 var selected = Game.LotControl.ActiveEntity;
-                var familyMembers = Game.vm.Context.ObjectQueries.Avatars.Where(x => 
-                    ((VMAvatar)x).GetPersonData(
-                        FSO.SimAntics.Model.VMPersonDataVariable.TS1FamilyNumber) == (Game.vm.TS1State.CurrentFamily?.ChunkID)
+                var familyMembers = Game.vm.Context.ObjectQueries.Avatars.Where(x =>
+                    Game.vm.TS1State.CurrentFamily.RuntimeSubset.Contains(x.Object.OBJ.GUID)
                         ).ToList();
                 var index = familyMembers.IndexOf(selected);
                 if (familyMembers.Count > 0)

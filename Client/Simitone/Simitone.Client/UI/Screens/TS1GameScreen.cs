@@ -717,6 +717,9 @@ namespace Simitone.Client.UI.Screens
             {
                 vm.SetGlobalValue(32, 1);
                 vm.SpeedMultiplier = -1;
+            } else
+            {
+                vm.SetGlobalValue(32, 0);
             }
         }
 

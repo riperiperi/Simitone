@@ -26,8 +26,8 @@ namespace Simitone.Client.UI.Panels
         {
             Game = screen;
             Bg = Content.Get().CustomUI.Get("pswitch_bg.png").Get(GameFacade.GraphicsDevice);
-
-            var familyMembers = Game.vm.Context.ObjectQueries.Avatars.Where(x => ((VMAvatar)x).GetPersonData(FSO.SimAntics.Model.VMPersonDataVariable.TS1FamilyNumber) == (Game.vm.TS1State.CurrentFamily?.ChunkID));
+            
+            var familyMembers = Game.vm.Context.ObjectQueries.Avatars.Where(x => Game.vm.TS1State.CurrentFamily.RuntimeSubset.Contains(x.Object.OBJ.GUID));
             int i = 0;
             foreach (var fam in familyMembers)
             {

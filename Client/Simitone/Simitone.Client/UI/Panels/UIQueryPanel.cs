@@ -197,6 +197,10 @@ namespace Simitone.Client.UI.Panels
 
             var strings = motivesString.ToString().Replace("\r", "").Split('\n').TakeWhile(x => x != "");
             TitleAd.Caption = string.Join("\n", strings.Take(2));
+            TitleAd.CaptionStyle.LineHeightModifier = -3;
+            TitleAd.Y = 22;
+            TitleAd.Alignment = TextAlignment.Middle | TextAlignment.Right;
+            TitleAd.Wrapped = true;
             Ad.Caption = string.Join(", ", strings);
 
             SetTitleSize();
