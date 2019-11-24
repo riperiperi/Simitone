@@ -380,7 +380,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
 
         private void ObjectHolder_OnPickup(UIObjectSelection holding, UpdateState state)
         {
-            Game.LotControl.PickupPanel.SetInfo(Game.LotControl.vm, holding.Group.BaseObject);
+            Game.LotControl.PickupPanel.SetInfo(Game.LotControl.vm, holding.RealEnt ?? holding.Group.BaseObject);
             Game.Frontend.MainPanel.SetSubpanelPickup(0f);
         }
 
@@ -817,6 +817,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
                 case UICatalogMode.Magictown:
                     return item.MagictownSort;
                 default:
+                    if (item.RoomSort == 0) return 0; //items without a room sort should not appear.
                     return item.Subsort;
             }
         }
@@ -871,6 +872,10 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
             else
             {
                 var mask = 1 << index;
+                if (Mode == UICatalogMode.Normal && index == 7)
+                {
+                    mask |= 16;
+                }
                 FilterCategory = FullCategory.Where(x => (GetSubsort(x.Item) & mask) > 0);
             }
             CatContainer.Reset();
@@ -893,6 +898,11 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
         public ObjectCatalogItem Item;
         public int CalcPrice;
         public UISpecialCatalogElement Special;
+
+        public override string ToString()
+        {
+            return Item.Name ?? "(unknown)";
+        }
     }
 
     public class UISpecialCatalogElement

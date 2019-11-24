@@ -270,8 +270,7 @@ namespace Simitone.Client
         protected override void OnExiting(object sender, EventArgs args)
         {
             base.OnExiting(sender, args);
-            GameThread.Killed = true;
-            GameThread.OnKilled.Set();
+            GameThread.SetKilled();
         }
 
         /// <summary>

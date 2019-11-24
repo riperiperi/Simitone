@@ -95,8 +95,8 @@ namespace Simitone.Client.UI.Screens
             InterpolatedAnimation = InterpolatedAnimation;
 
             (new Thread(() => {
-                FSO.Content.Content.Init(GlobalSettings.Default.StartupPath, GameFacade.GraphicsDevice);
                 VMContext.InitVMConfig(true);
+                FSO.Content.Content.Init(GlobalSettings.Default.StartupPath, GameFacade.GraphicsDevice);
                 lock (this)
                 {
                     LoadingComplete = true;

@@ -87,7 +87,7 @@ namespace Simitone.Client.UI.Controls
                 {
                     MainButton.Texture = Content.Get().CustomUI.Get(catG.IconName).Get(GameFacade.GraphicsDevice);
                 }
-                else
+                if (catG.ID != cat || UIScreen.Current.ScreenHeight >= 720)
                 {
                     var btn = new UIStencilButton(Content.Get().CustomUI.Get(catG.IconName).Get(GameFacade.GraphicsDevice));
                     btn.Shadow = true;
