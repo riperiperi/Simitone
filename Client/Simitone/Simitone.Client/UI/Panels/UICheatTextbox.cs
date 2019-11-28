@@ -96,7 +96,7 @@ namespace Simitone.Client.UI.Panels
             shouldHide = true;
             if (string.IsNullOrWhiteSpace(commandString)) return; // a blank textbox should close after hitting enter -- even if a command was never run.
 
-            var cheat = new VMBudgetCheatCmd();
+            var cheat = new VMNetCheatCmd();
             var context = new VMCheatContext();
             var repetitions = getRepetitions(commandString);
             switch (trimRepetitions(commandString))
@@ -120,7 +120,7 @@ namespace Simitone.Client.UI.Panels
                 FSO.HIT.HITVM.Get().PlaySoundEvent(UISounds.Error); // in TS1 this was a dialog but a sound may be less intrusive
                 return;
             }
-            context.Repetitions = repetitions;
+            context.Repetitions = (byte)repetitions;
             var sndEvent = UISounds.Error;
             if (context.CheatBehavior != VMCheatContext.VMCheatType.InvalidCheat)
             {
