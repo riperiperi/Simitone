@@ -31,6 +31,7 @@ namespace Simitone.Client.UI.Panels
         public UIStencilButton ExtendPanelBtn;
         public UIModeSwitcher ModeSwitcher;
         public UIDesktopUCP DesktopUCP;
+        public UICheatTextbox CheatTextbox;
 
         public bool PanelActive;
         public int LastCut = 0;
@@ -61,6 +62,11 @@ namespace Simitone.Client.UI.Panels
                 ExtendPanelBtn.OnButtonClick += ExpandClicked;
                 Add(ExtendPanelBtn);
             }
+
+            CheatTextbox = new UICheatTextbox(Game.vm);
+            CheatTextbox.Position = new Vector2(10, 10);
+            CheatTextbox.Visible = false;
+            Add(CheatTextbox);
 
             MainPanel = new UIMainPanel(screen);
             MainPanel.OnEndSelect += OnEndSelect;

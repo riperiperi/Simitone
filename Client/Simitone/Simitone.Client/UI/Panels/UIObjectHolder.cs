@@ -490,7 +490,7 @@ namespace Simitone.Client.UI.Panels
             state.UIState.TooltipProperties.Opacity = 1;
             state.UIState.TooltipProperties.Position = new Vector2(MouseDownX,
                 MouseDownY);
-            state.UIState.Tooltip = GameFacade.Strings.GetString("137", ((int)Holding.CanPlace).ToString());
+            state.UIState.Tooltip = GameFacade.Strings.GetString("137", ((int)error).ToString()); //((int)Holding.CanPlace).ToString()); was this the desired effect?
             state.UIState.TooltipProperties.UpdateDead = false;
             ShowTooltip = true;
             HITVM.Get().PlaySoundEvent(UISounds.Error);
