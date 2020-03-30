@@ -42,7 +42,7 @@ steps:
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
-    msbuildArgs: '/t:Simitone_Windows /p:Configuration=Release;OutDir=$(Build.ArtifactStagingDirectory)'
+    msbuildArgs: '/restore /t:Simitone_Windows /p:Configuration=Release;OutDir=$(Build.ArtifactStagingDirectory)'
 
 - task: NuGetCommand@2
   inputs:
