@@ -709,18 +709,16 @@ namespace Simitone.Client.UI.Screens
                 });
             }
 
+            var isSimless = (ActiveFamily == null && !isSurrounding);
             vm.SpeedMultiplier = -1;
             vm.Tick();
             vm.SpeedMultiplier = 1;
 
-            if (ActiveFamily == null && !isSurrounding)
+            if (isSimless)
             {
-                vm.SetGlobalValue(32, 1);
                 vm.SpeedMultiplier = -1;
-            } else
-            {
-                vm.SetGlobalValue(32, 0);
             }
+            vm.SetGlobalValue(32, (short)(isSimless ? 1 : 0));
         }
 
 

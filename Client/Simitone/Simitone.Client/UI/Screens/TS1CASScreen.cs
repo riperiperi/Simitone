@@ -144,7 +144,7 @@ namespace Simitone.Client.UI.Screens
                 var pos1 = Mode2D[prev];
                 var pos2 = Mode2D[next];
 
-                if (World != null) World.State.PreciseZoom = 1 + Math.Min(0, value*0.5f);
+                if (World != null) World.State.PreciseZoom = 1 + Math.Min(0, value * 0.5f);
                 value = (float)DirectionUtils.PosMod(value, 1.0);
                 var campos = Vector3.Lerp(pos1, pos2, value);
                 campos += (float)Math.Sin(value * Math.PI) * SinTransitions[prev];
@@ -173,12 +173,17 @@ namespace Simitone.Client.UI.Screens
             }
         }
 
+        private string MissingFallback(string x, IEnumerable<string> texnames)
+        {
+            return "x";
+        }
+
         private void PopulateSimType(string simtype)
         {
             CurrentCode = simtype;
             var heads = Content.Get().BCFGlobal.CollectionsByName["c"].ClothesByAvatarType[simtype];
             if (simtype[1] == 'c') simtype += "chd";
-            var bodies = Content.Get().BCFGlobal.CollectionsByName["b"].ClothesByAvatarType[simtype];
+            var bodies = Content.Get().BCFGlobal.CollectionsByName["b"].GeneralAvatarType(simtype);
 
             var tex = (TS1AvatarTextureProvider)Content.Get().AvatarTextures;
             var texnames = tex.GetAllNames();
@@ -186,8 +191,11 @@ namespace Simitone.Client.UI.Screens
             ActiveBodies = bodies;
             
             ActiveHeadTex = heads.Select(x => RemoveExt(texnames.FirstOrDefault(y => y.StartsWith(ExtractID(x, CurrentSkin))))).ToList();
-            ActiveBodyTex = bodies.Select(x => RemoveExt(texnames.FirstOrDefault(y => y.StartsWith(ExtractID(x, CurrentSkin))))).ToList();
-            ActiveHandgroupTex = bodies.Select(x => (RemoveExt(texnames.FirstOrDefault(y => y == "huao"+FindHG(x))) ?? "huao"+ CurrentSkin).Substring(4)).ToList();
+            ActiveBodyTex = bodies.Select(x => RemoveExt(
+                texnames.FirstOrDefault(y => y.StartsWith(ExtractID(x, CurrentSkin)))
+                ?? texnames.FirstOrDefault(y => y.StartsWith(ExtractID(x, ""))) ?? MissingFallback(x, texnames)
+                )).ToList();
+            ActiveHandgroupTex = ActiveBodyTex.Select(x => (RemoveExt(texnames.FirstOrDefault(y => RemoveExt(y) == "huao"+FindHG(x))) ?? "huao"+ CurrentSkin).Substring(4)).ToList();
 
             for (int i=0; i<ActiveHeads.Count; i++)
             {
