@@ -801,6 +801,9 @@ namespace Simitone.Client.UI.Panels
                 if (ShowTooltip) state.UIState.TooltipProperties.UpdateDead = false;
 
                 bool scrolled = false;
+
+                World.State.Cameras.CameraFirstPerson.CaptureMouse = true;
+
                 if (RMBScroll)
                 {
                     World.State.ScrollAnchor = null;

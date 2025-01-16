@@ -648,6 +648,7 @@ namespace Simitone.Client.UI.Screens
                 subworld.State.Level = 5;
                 var subHeight = tempVM.Context.Blueprint.InterpAltitude(new Vector3(0, 0, 0));
                 tempVM.Context.Blueprint.BaseAlt = (int)Math.Round(((subHeight - myHeight) + myH.Position.Y - h.Position.Y) / tempVM.Context.Blueprint.TerrainFactor);
+                subworld.UseFade = false;
                 subworld.GlobalPosition = new Vector2((myH.Position.X - h.Position.X), (myH.Position.Z - h.Position.Z));
 
                 foreach (var obj in tempVM.Entities)
