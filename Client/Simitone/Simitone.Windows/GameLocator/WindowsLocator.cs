@@ -59,6 +59,25 @@ namespace Simitone.Windows.GameLocator
                     }
                 }
             }
+
+        // Fall back to steam folders
+            DriveInfo[] allDrives = DriveInfo.GetDrives();
+
+            foreach (DriveInfo d in allDrives)
+            {
+                if (d.Name =="C:")
+                {
+                    if (Directory.Exists(@"C:\Program Files (x86)\Steam\steamapps\common\The Sims Legacy\"))
+                        return @"C:\Program Files (x86)\Steam\steamapps\common\The Sims Legacy\".Replace('\\', '/');
+
+                }
+                else if (d.Name == "D:")
+                {
+                    if (Directory.Exists(@"D:\Program Files (x86)\Steam\steamapps\common\The Sims Legacy\"))
+                        return @"D:\Program Files (x86)\Steam\steamapps\common\The Sims Legacy\".Replace('\\', '/');
+
+                }
+            }
             // Fall back to the default install location if the other two checks fail
             return @"C:\Program Files (x86)\Maxis\The Sims\".Replace('\\', '/');
         }
