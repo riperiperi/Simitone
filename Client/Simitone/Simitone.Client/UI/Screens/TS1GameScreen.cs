@@ -487,7 +487,7 @@ namespace Simitone.Client.UI.Screens
         public void InitializeLot(VMMarshal marshal)
         {
             InitializeLot();
-            vm.MyUID = 1;
+            vm.MyUID = 65537;
             vm.Load(marshal);
 
             vm.TS1State.ActivateFamily(vm, ActiveFamily);
@@ -576,7 +576,7 @@ namespace Simitone.Client.UI.Screens
                 
                 if (vm.LoadErrors.Count > 0) GameThread.NextUpdate((state) => ShowLoadErrors(vm.LoadErrors, true));
 
-                vm.MyUID = 1;
+                vm.MyUID = 65537;
                 var settings = GlobalSettings.Default;
                 var myClient = new VMNetClient
                 {

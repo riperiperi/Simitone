@@ -1,19 +1,10 @@
-﻿/*
-This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
-If a copy of the MPL was not distributed with this file, You can obtain one at
-http://mozilla.org/MPL/2.0/.
-*/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using FSO.Client.UI.Framework;
 using FSO.Client.UI.Model;
 using FSO.Client.UI.Controls;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using FSO.Client.Utils;
 using FSO.SimAntics;
 using FSO.HIT;
 using FSO.Vitaboy;
@@ -36,6 +27,10 @@ namespace Simitone.Client.UI.Panels
         public UILotControl m_Parent;
         public UIImage m_Bg;
 
+        private Vector2 currentTarget;
+        private Vector2 curRot;
+        private float lerpSpeed;
+
         private _3DTargetScene HeadScene;
         private BasicCamera HeadCamera;
         private double m_BgGrow;
@@ -48,6 +43,7 @@ namespace Simitone.Client.UI.Panels
         private SimAvatar m_Head;
 
         private TextStyle ButtonStyle;
+        private TextStyle HighlightStyle;
 
         public UIPieMenu(List<VMPieMenuInteraction> pie, VMEntity obj, VMEntity caller, UILotControl parent)
         {
@@ -67,8 +63,13 @@ namespace Simitone.Client.UI.Panels
                 CursorColor = new Color(255, 255, 255)
             };
 
+            HighlightStyle = ButtonStyle.Clone();
+            HighlightStyle.Color = Color.Yellow;
+
+            lerpSpeed = 0.125f * (60.0f / FSOEnvironment.RefreshRate);
             m_Bg = new UIImage(TextureGenerator.GetPieBG(GameFacade.GraphicsDevice));
-            m_Bg.SetSize(0, 0); //is scaled up later
+            m_Bg.SetSize(2, 2); //is scaled up later
+            m_Bg.Position = new Vector2(-1, -1);
             this.AddAt(0, m_Bg);
 
             m_PieTree = new UIPieMenuItem()
@@ -102,10 +103,20 @@ namespace Simitone.Client.UI.Panels
                 }
                 //we are in the category, put the interaction in here;
 
+                var name = depth[depth.Length - 1];
+                var semiInd = name.LastIndexOf(';');
+                int colorMod = 0;
+                if (semiInd > -1)
+                {
+                    int.TryParse(name.Substring(semiInd + 1), out colorMod);
+                    name = name.Substring(0, semiInd);
+                }
+
                 var item = new UIPieMenuItem()
                 {
                     Category = false,
-                    Name = depth[depth.Length - 1],
+                    Name = name,
+                    ColorMod = colorMod,
                     ID = pie[i].ID,
                     Param0 = pie[i].Param0,
                     Global = pie[i].Global
@@ -147,14 +158,14 @@ namespace Simitone.Client.UI.Panels
 
         public void RotateHeadCam(Vector2 point)
         {
-            double xdir = Math.Atan(-point.X / 100.0);
-            double ydir = Math.Atan(-point.Y / 100.0);
+            curRot = Vector2.Lerp(curRot, currentTarget, lerpSpeed);
+            double xdir = Math.Atan(-curRot.X / 100.0);
+            double ydir = Math.Atan(-curRot.Y / 100.0);
 
             Vector3 off = new Vector3(0, 0, 13.5f);
             Matrix mat = Microsoft.Xna.Framework.Matrix.CreateRotationY((float)xdir) * Microsoft.Xna.Framework.Matrix.CreateRotationX((float)ydir);
 
-            var pos2 = m_Head.Skeleton.GetBone("HEAD").AbsolutePosition;
-            HeadCamera.Position = new Vector3(0, pos2.Y, 0) + Vector3.Transform(off, mat);
+            HeadCamera.Position = new Vector3(0, 5.2f, 0) + Vector3.Transform(off, mat);
         }
 
         public void RemoveSimScene()
@@ -204,8 +215,9 @@ namespace Simitone.Client.UI.Panels
                 var elem = elems.ElementAt(i);
                 var but = new UIButton()
                 {
-                    Caption = elem.Name + ((elem.Category) ? "..." : ""),
-                    CaptionStyle = ButtonStyle,
+                    // TS1 does ellipsis on categories manually.
+                    Caption = elem.Name, // + ((elem.Category) ? "..." : ""),
+                    CaptionStyle = (elem.ColorMod > 0) ? HighlightStyle : ButtonStyle,
                     ImageStates = 1,
                     Texture = TextureGenerator.GetPieButtonImg(GameFacade.GraphicsDevice)
                 };
@@ -238,6 +250,7 @@ namespace Simitone.Client.UI.Panels
                 m_PieButtons.Add(but);
                 but.OnButtonClick += new ButtonClickDelegate(PieButtonClick);
                 but.OnButtonHover += new ButtonClickDelegate(PieButtonHover);
+                but.OnButtonExit += new ButtonClickDelegate(PieButtonExit);
             }
 
             bool top = true;
@@ -247,7 +260,7 @@ namespace Simitone.Client.UI.Panels
                 var but = new UIButton()
                 {
                     Caption = elem.Name + ((elem.Category) ? "..." : ""),
-                    CaptionStyle = ButtonStyle,
+                    CaptionStyle = (elem.ColorMod > 0) ? HighlightStyle : ButtonStyle,
                     ImageStates = 1,
                     Texture = TextureGenerator.GetPieButtonImg(GameFacade.GraphicsDevice)
                 };
@@ -266,7 +279,8 @@ namespace Simitone.Client.UI.Panels
                 this.Add(but);
                 m_PieButtons.Add(but);
                 but.OnButtonClick += new ButtonClickDelegate(PieButtonClick);
-
+                but.OnButtonHover += new ButtonClickDelegate(PieButtonHover);
+                but.OnButtonExit += new ButtonClickDelegate(PieButtonExit);
                 top = !top;
             }
 
@@ -292,9 +306,15 @@ namespace Simitone.Client.UI.Panels
 
         void PieButtonHover(UIElement button)
         {
-            int index = m_PieButtons.IndexOf((UIButton)button);
-            //todo, make sim look at button
+            var uiB = (UIButton)button;
+            int index = m_PieButtons.IndexOf(uiB);
+            currentTarget = button.Position + new Vector2(uiB.Width / 2f, uiB.Size.Y / 2f);
             HITVM.Get().PlaySoundEvent(UISounds.PieMenuHighlight);
+        }
+
+        void PieButtonExit(UIElement button)
+        {
+            currentTarget = Vector2.Zero;
         }
 
         void BackButtonPress(UIElement button)
@@ -325,6 +345,7 @@ namespace Simitone.Client.UI.Panels
                     m_Parent.vm.SendCommand(new VMNetGotoCmd
                     {
                         Interaction = action.ID,
+                        Param0 = action.Param0,
                         ActorUID = m_Caller.PersistID,
                         x = m_Obj.Position.x,
                         y = m_Obj.Position.y,
@@ -378,7 +399,7 @@ namespace Simitone.Client.UI.Panels
             if (m_CurrentItem == m_PieTree)
             {
                 var invScale = new Vector2(1 / TrueScale, 1 / TrueScale);
-                DrawLocalTexture(batch, HeadScene.Target, null, new Vector2(-100, -100) * invScale, invScale);
+                DrawLocalTexture(batch, HeadScene.Target, null, new Vector2(-100, -100), invScale);
             } //if we're top level, draw head!
         }
     }
@@ -389,6 +410,7 @@ namespace Simitone.Client.UI.Panels
         public byte ID;
         public short Param0;
         public bool Global;
+        public int ColorMod;
         public string Name;
         public List<UIPieMenuItem> Children = new List<UIPieMenuItem>();
         public Dictionary<string, UIPieMenuItem> ChildrenByName = new Dictionary<string, UIPieMenuItem>();
