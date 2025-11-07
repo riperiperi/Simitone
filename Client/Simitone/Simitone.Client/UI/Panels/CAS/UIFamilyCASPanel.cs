@@ -22,6 +22,7 @@ namespace Simitone.Client.UI.Panels.CAS
         public UIDiagonalStripe NameStripe;
         public UIDiagonalStripe ListStripe;
 
+        public UILabel SecondNameTitle;
         public UITextBox SecondName;
         public UIAvatarListPanel AvatarList;
         public UICategorySwitcher AvatarOptions;
@@ -40,11 +41,13 @@ namespace Simitone.Client.UI.Panels.CAS
                 if (value < 1 && AvatarOptions.CategoryExpand == 1) AvatarOptions.Close();
                 ListStripe.Visible = value > 0;
                 NameStripe.Visible = value > 0;
+                SecondNameTitle.Visible = value > 0;
                 NameStripe.X = (1 - value) * UIScreen.Current.ScreenWidth;
                 NameStripe.Y = 30;
                 NameStripe.BodySize = new Point((int)(value * UIScreen.Current.ScreenWidth), NameStripe.BodySize.Y);
                 ListStripe.BodySize = new Point((int)(value * UIScreen.Current.ScreenWidth), ListStripe.BodySize.Y);
                 AvatarList.X = (1-value) * (-UIScreen.Current.ScreenWidth);
+                SecondNameTitle.X = (1 - value) * (UIScreen.Current.ScreenWidth);
                 SecondName.X = (1 - value) * (UIScreen.Current.ScreenWidth);
                 _ShowI = value;
             }
@@ -73,6 +76,16 @@ namespace Simitone.Client.UI.Panels.CAS
             NameStripe = new UIDiagonalStripe(new Point(0, 75), UIDiagonalStripeSide.LEFT, UIStyle.Current.Bg);
             NameStripe.Position = new Vector2(UIScreen.Current.ScreenWidth, 30);
             Add(NameStripe);
+
+            SecondNameTitle = new UILabel();
+            SecondNameTitle.Caption = "Last Name";
+            SecondNameTitle.CaptionStyle = SecondNameTitle.CaptionStyle.Clone();
+            SecondNameTitle.CaptionStyle.Color = UIStyle.Current.SecondaryText;
+            SecondNameTitle.CaptionStyle.Size = 15;
+            SecondNameTitle.Size = new Vector2(UIScreen.Current.ScreenWidth, 25);
+            SecondNameTitle.Alignment = TextAlignment.Center | TextAlignment.Middle;
+            SecondNameTitle.Position = new Vector2(0, 15);
+            Add(SecondNameTitle);
 
             SecondName = new UITextBox();
             SecondName.TextMargin = new Rectangle();

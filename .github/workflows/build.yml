@@ -1,0 +1,59 @@
+name: Build Simitone
+
+on:
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: 'Build configuration'
+        required: false
+        default: 'Release'
+        type: choice
+        options:
+          - Release
+          - Debug
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Run Protobuild
+      shell: pwsh
+      run: |
+        cd FreeSO/Other/libs/FSOMonoGame/
+        ./protobuild.exe --generate
+      continue-on-error: true
+
+    - name: Restore Simitone dependencies
+      run: dotnet restore Client/Simitone/Simitone.sln
+
+    - name: Restore FreeSO dependencies
+      run: dotnet restore FreeSO/TSOClient/FreeSO.sln
+      continue-on-error: true
+
+    - name: Restore Roslyn dependencies
+      shell: pwsh
+      run: |
+        cd FreeSO/TSOClient/FSO.SimAntics.JIT.Roslyn/
+        dotnet restore
+      continue-on-error: true
+
+    - name: Build
+      run: dotnet build Client/Simitone/Simitone.sln -c ${{ inputs.configuration || 'Release' }} --no-restore
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: SimitoneWindows-${{ inputs.configuration || 'Release' }}
+        path: Client/Simitone/Simitone.Windows/bin/${{ inputs.configuration || 'Release' }}/net9.0-windows/
+        if-no-files-found: error
