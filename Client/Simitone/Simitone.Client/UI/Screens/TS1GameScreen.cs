@@ -1,4 +1,4 @@
-﻿
+
 using FSO.Client;
 using FSO.Client.Debug;
 using FSO.Client.UI.Controls;
@@ -56,6 +56,7 @@ namespace Simitone.Client.UI.Screens
         //for TS1 hybrid mode
         public UINeighborhoodSelectionPanel TS1NeighPanel;
         public FAMI ActiveFamily;
+        private ushort CurrentNeighborhoodMode = 4; // default to Normal/Old Town
 
         public bool InLot
         {
@@ -172,6 +173,16 @@ namespace Simitone.Client.UI.Screens
             }
         }
 
+        private ushort GetNeighborhoodModeFromHouse(short house)
+        {
+            // House number ranges match the lot types
+            if (house >= 21 && house <= 31) return 2;  // Downtown
+            else if (house >= 40 && house <= 49) return 3;  // Vacation
+            else if (house >= 81 && house <= 90) return 5;  // Studiotown
+            else if (house >= 90 && house <= 99) return 7;  // Magictown
+            else return 4;  // Normal/Old Town (default)
+        }
+
         public TS1GameScreen(NeighSelectionMode mode) : base()
         {
             Bg = new UISimitoneBg();
@@ -195,11 +206,16 @@ namespace Simitone.Client.UI.Screens
 
         public void NeighSelection(NeighSelectionMode mode)
         {
+            var nbd = (ushort)((mode == NeighSelectionMode.MoveInMagic) ? 7 : 4);
+            NeighSelection(nbd, mode != NeighSelectionMode.Normal);
+        }
+
+        public void NeighSelection(ushort neighborhoodMode, bool moveInMode = false)
+        {
             Content.Get().Neighborhood.PreparePersonDataFromObject = PersonGeneratorHelper.PreparePersonDataFromObject;
             Content.Get().Neighborhood.AddMissingNeighbors();
-            var nbd = (ushort)((mode == NeighSelectionMode.MoveInMagic) ? 7 : 4);
-            TS1NeighPanel = new UINeighborhoodSelectionPanel(nbd);
-            var switcher = new UINeighbourhoodSwitcher(TS1NeighPanel, nbd, mode != NeighSelectionMode.Normal);
+            TS1NeighPanel = new UINeighborhoodSelectionPanel(neighborhoodMode);
+            var switcher = new UINeighbourhoodSwitcher(TS1NeighPanel, neighborhoodMode, moveInMode);
             TS1NeighPanel.OnHouseSelect += (house) =>
             {
                 if (MoveInFamily != null)
@@ -232,6 +248,7 @@ namespace Simitone.Client.UI.Screens
         public void PlayHouse(short house, UIElement switcher)
         {
             ActiveFamily = Content.Get().Neighborhood.GetFamilyForHouse((short)house);
+            CurrentNeighborhoodMode = GetNeighborhoodModeFromHouse(house);
             InitializeLot(Content.Get().Neighborhood.GetHousePath(house), false);// "UserData/Houses/House21.iff"
             Remove(TS1NeighPanel);
             if (switcher != null) Remove(switcher);
@@ -880,7 +897,7 @@ namespace Simitone.Client.UI.Screens
         public void ExitLot()
         {
             CleanupLastWorld();
-            NeighSelection(NeighSelectionMode.Normal);
+            NeighSelection(CurrentNeighborhoodMode);
             Downtown = false;
             SavedLot = null;
         }
