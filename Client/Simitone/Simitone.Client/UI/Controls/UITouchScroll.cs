@@ -197,6 +197,31 @@ namespace Simitone.Client.UI.Controls
             Scroll = value;
         }
 
+        public void ScrollToItem(int itemIndex)
+        {
+            // Center the item in the visible area
+            var targetScroll = itemIndex * ItemWidth - (GetPAxis(Size) / 2) + (ItemWidth / 2);
+            // Clamp to valid scroll range
+            var length = LengthProvider();
+            Scroll = Math.Max(-Margin, Math.Min(length * ItemWidth - GetPAxis(Size) + Margin, targetScroll));
+            ScrollVelocity = 0; // Stop any ongoing momentum
+        }
+
+        /// <summary>
+        /// Selects an item by its index programmatically, triggering the visual highlight.
+        /// </summary>
+        public void SelectItem(int itemIndex)
+        {
+            if (itemIndex < 0 || itemIndex >= LengthProvider()) return;
+            var rItem = GetOrPrepare(itemIndex);
+            if (rItem != null)
+            {
+                LastSelected?.Deselected();
+                rItem.Selected();
+                LastSelected = rItem;
+            }
+        }
+
         public override void Draw(UISpriteBatch batch)
         {
             if (!Visible) return;

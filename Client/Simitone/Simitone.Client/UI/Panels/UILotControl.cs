@@ -80,6 +80,11 @@ namespace Simitone.Client.UI.Panels
 
         public int WallsMode = 1;
 
+        /// <summary>
+        /// Fired when CustomControl (floor/wallpaper tool) is released via ESC key.
+        /// </summary>
+        public event Action OnCustomControlReleased;
+
         private int OldMX;
         private int OldMY;
         private bool FoundMe; //if false and avatar changes, center. Should center on join lot.
@@ -900,15 +905,25 @@ namespace Simitone.Client.UI.Panels
                 if (LiveMode) LiveModeUpdate(state, scrolled);
                 else if (CustomControl != null)
                 {
-                    if (FSOEnvironment.SoftwareKeyboard) CustomControl.MousePosition = new Point(UIScreen.Current.ScreenWidth / 2, UIScreen.Current.ScreenHeight / 2);
+                    // ESC cancels floor/wallpaper/wall tools
+                    if (state.KeyboardState.IsKeyDown(Keys.Escape))
+                    {
+                        CustomControl.Release();
+                        CustomControl = null;
+                        OnCustomControlReleased?.Invoke();
+                    }
                     else
                     {
-                        CustomControl.Modifiers = 0;
-                        if (state.CtrlDown) CustomControl.Modifiers |= UILotControlModifiers.CTRL;
-                        if (state.ShiftDown) CustomControl.Modifiers |= UILotControlModifiers.SHIFT;
-                        CustomControl.MousePosition = state.MouseState.Position;
+                        if (FSOEnvironment.SoftwareKeyboard) CustomControl.MousePosition = new Point(UIScreen.Current.ScreenWidth / 2, UIScreen.Current.ScreenHeight / 2);
+                        else
+                        {
+                            CustomControl.Modifiers = 0;
+                            if (state.CtrlDown) CustomControl.Modifiers |= UILotControlModifiers.CTRL;
+                            if (state.ShiftDown) CustomControl.Modifiers |= UILotControlModifiers.SHIFT;
+                            CustomControl.MousePosition = state.MouseState.Position;
+                        }
+                        CustomControl.Update(state, scrolled);
                     }
-                    CustomControl.Update(state, scrolled);
                 }
                 else ObjectHolder.Update(state, scrolled);
 

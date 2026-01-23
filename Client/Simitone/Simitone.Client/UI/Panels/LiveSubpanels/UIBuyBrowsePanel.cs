@@ -329,6 +329,8 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
 
         public bool HoldingEvents;
 
+        private bool CheckedPendingEyedropper;
+
         public UIBuyBrowsePanel(TS1GameScreen screen, sbyte category, UICatalogMode mode) : base(screen) {
             CatContainer = new UITouchScroll(() => FilterCategory?.Count() ?? 0, CatalogElemProvider);
             CatContainer.ItemWidth = 90;
@@ -347,12 +349,318 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
             screen.LotControl.ObjectHolder.OnPickup += ObjectHolder_OnPickup;
             screen.LotControl.ObjectHolder.OnPutDown += ObjectHolder_OnPutDown;
             screen.LotControl.ObjectHolder.OnDelete += ObjectHolder_OnDelete;
+            screen.LotControl.ObjectHolder.OnEyedropperPick += ObjectHolder_OnEyedropperPick;
+            screen.LotControl.ObjectHolder.OnEyedropperArchitecturePick += ObjectHolder_OnEyedropperArchitecturePick;
+            screen.LotControl.OnCustomControlReleased += LotControl_OnCustomControlReleased;
             HoldingEvents = true;
+        }
+
+        /// <summary>
+        /// Maps a WorldCatalog category to the Build mode UI category and subcategory.
+        /// Returns null if the category is not a valid Build mode object category.
+        /// </summary>
+        private static (int uiCategory, int subcatIndex)? MapCatalogToBuildCategory(int catalogCategory)
+        {
+            // Based on BuildCategories MaskBit values
+            switch (catalogCategory)
+            {
+                // Objects (UI Category 2)
+                case 8: return (2, 0);  // Doors - MaskBit 7+1
+                case 9: return (2, 1);  // Windows - MaskBit 7+2
+                case 10: return (2, 2); // Stairs - MaskBit 7+3
+                case 12: return (2, 3); // Fireplaces - MaskBit 7+5
+
+                // Outdoors (UI Category 1)
+                case 11: return (1, 0); // Trees - MaskBit 7+4
+                case 14: return (1, 2); // Water - MaskBit 7+7
+                case 18: return (1, 1); // Terrain - MaskBit 7+11
+
+                // Architecture (UI Category 0) - these are special elements, not clickable objects
+                case 13: return (0, 0); // Walls - MaskBit 7+6
+                case 15: return (0, 1); // Wallpaper - MaskBit 7+8
+                case 16: return (0, 2); // Floors - MaskBit 7+9
+                case 17: return (0, 3); // Roofs - MaskBit 7+10
+
+                default: return null;
+            }
+        }
+
+        /// <summary>
+        /// Checks if there's a pending eyedropper GUID or architecture pattern to select after a category or mode switch.
+        /// Called from Update since Parent may not be set during constructor.
+        /// </summary>
+        private void CheckPendingEyedropperSelection()
+        {
+            if (CheckedPendingEyedropper) return;
+            CheckedPendingEyedropper = true;
+
+            var mainPanel = Parent as UIMainPanel;
+            if (mainPanel == null) return;
+
+            // Check for pending architecture pick first
+            if (mainPanel.PendingEyedropperPatternID != null && mainPanel.PendingEyedropperArchType != null)
+            {
+                var patternID = mainPanel.PendingEyedropperPatternID.Value;
+                var archType = mainPanel.PendingEyedropperArchType.Value;
+                mainPanel.PendingEyedropperPatternID = null;
+                mainPanel.PendingEyedropperArchType = null;
+
+                SelectArchitectureByPatternID(patternID, archType);
+                return;
+            }
+
+            // Check for pending GUID pick
+            if (mainPanel.PendingEyedropperGUID != null)
+            {
+                var guid = mainPanel.PendingEyedropperGUID.Value;
+                mainPanel.PendingEyedropperGUID = null;
+
+                // Use SelectItemByGUID to handle category switching if needed
+                // (e.g., after a mode switch, we may be in the wrong category)
+                SelectItemByGUID(guid);
+            }
+        }
+
+        private void ObjectHolder_OnEyedropperPick(uint guid)
+        {
+            // Turn off eyedropper mode (button state is synced in UIDesktopUCP)
+            Game.LotControl.ObjectHolder.EyedropperMode = false;
+
+            // Select the item in catalog
+            SelectItemByGUID(guid);
+        }
+
+        private void ObjectHolder_OnEyedropperArchitecturePick(ushort patternID, ArchitectureType archType)
+        {
+            // Turn off eyedropper mode (button state is synced in UIDesktopUCP)
+            Game.LotControl.ObjectHolder.EyedropperMode = false;
+
+            // Architecture picks only work in Build mode
+            if (Mode != UICatalogMode.Build)
+            {
+                // Switch to Build mode first
+                var mainPanel = Parent as UIMainPanel;
+                if (mainPanel != null)
+                {
+                    mainPanel.PendingEyedropperPatternID = patternID;
+                    mainPanel.PendingEyedropperArchType = archType;
+                    var frontend = Game.Frontend as UISimitoneFrontend;
+                    frontend?.SwitchMode(UIMainPanelMode.BUILD);
+                }
+                return;
+            }
+
+            // Already in Build mode - select the architecture item
+            SelectArchitectureByPatternID(patternID, archType);
+        }
+
+        /// <summary>
+        /// Selects an architecture item (floor or wallpaper) by its pattern ID.
+        /// </summary>
+        private void SelectArchitectureByPatternID(ushort patternID, ArchitectureType archType)
+        {
+            // Architecture items are in UI Category 0 (Architecture)
+            // Floor = subcategory index 2, Wallpaper = subcategory index 1
+            int targetUICategory = 0;
+            int targetSubcatIndex = (archType == ArchitectureType.Floor) ? 2 : 1;
+
+            // Switch to Architecture category if needed
+            if (Category != targetUICategory)
+            {
+                var mainPanel = Parent as UIMainPanel;
+                if (mainPanel != null)
+                {
+                    mainPanel.PendingEyedropperPatternID = patternID;
+                    mainPanel.PendingEyedropperArchType = archType;
+                    mainPanel.Switcher.Select(targetUICategory);
+                }
+                return;
+            }
+
+            // Initialize the correct subcategory
+            var subcat = BuildCategories[targetUICategory][targetSubcatIndex];
+            if (ChoosingSub)
+            {
+                InitSubcategory(subcat);
+            }
+
+            // Find and select the item by pattern ID (matching Special.ResID)
+            if (FilterCategory != null)
+            {
+                int index = 0;
+                foreach (var elem in FilterCategory)
+                {
+                    if (elem.Special?.ResID == patternID)
+                    {
+                        Selected(index);
+                        CatContainer.ScrollToItem(index);
+                        return;
+                    }
+                    index++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Finds an item by GUID in the catalog and selects it.
+        /// If the item is in a different category, switches to that category first.
+        /// If the item is in a different mode (Buy vs Build), switches modes first.
+        /// </summary>
+        public void SelectItemByGUID(uint guid)
+        {
+            // First, look up the item in the world catalog to find its category
+            var catalogItem = Content.Get().WorldCatalog.GetItemByGUID(guid);
+            if (catalogItem == null) return;
+
+            var targetCategory = catalogItem.Value.Category;
+            var mainPanel = Parent as UIMainPanel;
+
+            // Determine if this is a Buy item (0-7) or Build item (8+)
+            bool isBuyItem = targetCategory >= 0 && targetCategory <= 7;
+            bool isBuildItem = targetCategory >= 8;
+
+            // Check if we need to switch modes
+            if (Mode == UICatalogMode.Build && isBuyItem)
+            {
+                // In Build mode but clicked a Buy item → switch to Buy mode
+                if (mainPanel != null)
+                {
+                    mainPanel.PendingEyedropperGUID = guid;
+                    // Trigger mode switch to Buy
+                    var frontend = Game.Frontend as UISimitoneFrontend;
+                    frontend?.SwitchMode(UIMainPanelMode.BUY);
+                }
+                return;
+            }
+            else if (Mode != UICatalogMode.Build && isBuildItem)
+            {
+                // In Buy mode but clicked a Build item → switch to Build mode
+                if (mainPanel != null)
+                {
+                    mainPanel.PendingEyedropperGUID = guid;
+                    // Trigger mode switch to Build
+                    var frontend = Game.Frontend as UISimitoneFrontend;
+                    frontend?.SwitchMode(UIMainPanelMode.BUILD);
+                }
+                return;
+            }
+
+            // Same mode - handle normally
+            if (Mode == UICatalogMode.Build)
+            {
+                // Build mode - map catalog category to Build UI category
+                var mapping = MapCatalogToBuildCategory(targetCategory);
+                if (mapping == null) return; // Not a valid build object
+
+                var (targetUICategory, targetSubcatIndex) = mapping.Value;
+
+                // Check if we need to switch Build UI categories
+                if (targetUICategory != Category)
+                {
+                    if (mainPanel != null)
+                    {
+                        // Store for after category switch
+                        mainPanel.PendingEyedropperGUID = guid;
+                        mainPanel.Switcher.Select(targetUICategory);
+                    }
+                    return;
+                }
+
+                // Same Build category - initialize the subcategory and select
+                if (ChoosingSub)
+                {
+                    var subcat = BuildCategories[Category][targetSubcatIndex];
+                    InitSubcategory(subcat);
+                }
+                SelectItemInCurrentCategory(guid);
+                return;
+            }
+
+            // Buy mode logic
+            if (targetCategory != Category)
+            {
+                // Store the GUID to select after category switch
+                if (mainPanel != null)
+                {
+                    mainPanel.PendingEyedropperGUID = guid;
+                    // Switch to the target category - this will create a new panel
+                    mainPanel.Switcher.Select(targetCategory);
+                }
+                return;
+            }
+
+            // Item is in this category - select it
+            SelectItemInCurrentCategory(guid);
+        }
+
+        /// <summary>
+        /// Selects an item by GUID within the current category.
+        /// </summary>
+        private void SelectItemInCurrentCategory(uint guid)
+        {
+            // If we're still choosing subcategory, skip to show all items
+            if (ChoosingSub)
+            {
+                ChoosingSub = false;
+                foreach (var btn in SelButtons)
+                {
+                    Remove(btn);
+                }
+                foreach (var label in SelLabels)
+                {
+                    Remove(label);
+                }
+                SelButtons.Clear();
+                SelLabels.Clear();
+
+                // Show all items in this category
+                FilterCategory = FullCategory.Where(x => GetSubsort(x.Item) > 0);
+                CatContainer.Opacity = 1f;
+                CatContainer.Reset();
+            }
+
+            // Search in FilterCategory first
+            if (FilterCategory != null)
+            {
+                int index = 0;
+                foreach (var item in FilterCategory)
+                {
+                    if (item.Item.GUID == guid)
+                    {
+                        CatContainer.SelectItem(index);
+                        CatContainer.ScrollToItem(index);
+                        return;
+                    }
+                    index++;
+                }
+            }
+
+            // If not found in filtered, search in FullCategory
+            int fullIndex = 0;
+            foreach (var item in FullCategory)
+            {
+                if (item.Item.GUID == guid)
+                {
+                    // Show all items and select
+                    FilterCategory = FullCategory;
+                    CatContainer.Reset();
+                    CatContainer.SelectItem(fullIndex);
+                    CatContainer.ScrollToItem(fullIndex);
+                    return;
+                }
+                fullIndex++;
+            }
         }
 
         private void ObjectHolder_OnDelete(UIObjectSelection holding, UpdateState state)
         {
             Game.Frontend.MainPanel.SetSubpanelPickup(1f);
+            Game.LotControl.QueryPanel.Active = false;
+            ItemID = -1;
+        }
+
+        private void LotControl_OnCustomControlReleased()
+        {
             Game.LotControl.QueryPanel.Active = false;
             ItemID = -1;
         }
@@ -392,6 +700,10 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
                 Game.LotControl.ObjectHolder.OnPickup -= ObjectHolder_OnPickup;
                 Game.LotControl.ObjectHolder.OnPutDown -= ObjectHolder_OnPutDown;
                 Game.LotControl.ObjectHolder.OnDelete -= ObjectHolder_OnDelete;
+                Game.LotControl.ObjectHolder.OnEyedropperPick -= ObjectHolder_OnEyedropperPick;
+                Game.LotControl.ObjectHolder.OnEyedropperArchitecturePick -= ObjectHolder_OnEyedropperArchitecturePick;
+                Game.LotControl.OnCustomControlReleased -= LotControl_OnCustomControlReleased;
+                Game.LotControl.ObjectHolder.EyedropperMode = false;
                 Game.LotControl.QueryPanel.Active = false;
                 Game.Frontend.MainPanel.SetSubpanelPickup(1f);
 
@@ -784,6 +1096,9 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
 
         public override void Update(UpdateState state)
         {
+            // Check for pending eyedropper selection (after category switch)
+            CheckPendingEyedropperSelection();
+
             Invalidate();
             var first = SelButtons.FirstOrDefault();
             if (first != null && first.Opacity == 0)

@@ -75,6 +75,7 @@ namespace Simitone.Client.UI.Panels
                 && state.NewKeys.Contains(Keys.C)) //prevent change over multiple frames
             {
                 Visible = !Visible;
+                if (!Visible) state.InputManager.SetFocus(null); // Clear focus when hiding
             }
             baseTextbox.Visible = Visible;
             if (Visible)
@@ -83,6 +84,7 @@ namespace Simitone.Client.UI.Panels
                 {
                     commandEntered(baseTextbox.CurrentText, out bool shouldHide);
                     Visible = !shouldHide;
+                    if (!Visible) state.InputManager.SetFocus(null); // Clear focus when hiding
                 }
             }               
         }

@@ -20,6 +20,7 @@ On modern operating systems, The Sims has a few nagging issues that make it less
 - Custom user interface that works at modern resolutions. Working on a more desktop oriented interface.
 - Improved graphical performance, support for high resolutions and refresh rates.
 - Custom lighting - directional lights with smooth falloffs and shadows using generated 3D meshes.
+- Quality of life fixes that were available in later installations of the series such as the eyedropper tool (currently does not work on wallpaper)
 - *Volcanic*, a program which allows you to examine, modify and create new game objects. (from FreeSO)
 
 # Why is it called Simitone?
@@ -27,3 +28,7 @@ On modern operating systems, The Sims has a few nagging issues that make it less
 Simitone -> Semitone -> musical term -> C# -> a note
 
 Further questions can be directed at my PR manager, uh, ... burglar cop.
+
+# Attributions
+
+Icon for Eyedropper tool: <a target="_blank" href="https://icons8.com/icon/78728/color-dropper">eyedropper</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>

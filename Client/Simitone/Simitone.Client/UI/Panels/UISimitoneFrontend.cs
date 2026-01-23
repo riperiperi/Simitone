@@ -161,6 +161,15 @@ namespace Simitone.Client.UI.Panels
             MainPanel.Switcher_OnCategorySelect(MainPanel.Switcher.ActiveCategory);
         }
 
+        /// <summary>
+        /// Programmatically switch to a different mode (Buy, Build, Live, Options).
+        /// Used by eyedropper to auto-switch modes when clicking cross-mode objects.
+        /// </summary>
+        public void SwitchMode(UIMainPanelMode mode)
+        {
+            LiveButtonClicked(mode);
+        }
+
         private bool LiveButtonClicked(UIMainPanelMode mode)
         {
             var deskAuto = Game.Desktop && (mode != UIMainPanelMode.LIVE || MainPanel.Mode != UIMainPanelMode.LIVE);
