@@ -88,6 +88,10 @@ namespace Simitone.Client.UI.Panels
         private int RMBScrollX;
         private int RMBScrollY;
 
+        private bool MMBScroll;
+        private int MMBScrollX;
+        private int MMBScrollY;
+
         //1 = near, 0.5 = med, 0.25 = far
         //"target" because we rescale the game target to fit this zoom level.
         public float TargetZoom = 1; 
@@ -865,9 +869,61 @@ namespace Simitone.Client.UI.Panels
 
                 if (state.MouseState.RightButton != ButtonState.Pressed)
                 {
-                    if (RMBScroll) GameFacade.Cursor.SetCursor(CursorType.Normal);
+                    if (RMBScroll)
+                    {
+                        GameFacade.Cursor.SetCursor(CursorType.Normal);
+                        // Check if it was a click (not a drag) on a family member Sim
+                        var deltaX = Math.Abs(state.MouseState.X - RMBScrollX);
+                        var deltaY = Math.Abs(state.MouseState.Y - RMBScrollY);
+                        if (deltaX < 5 && deltaY < 5 && LiveMode && ActiveEntity != null)
+                        {
+                            // It was a click - check if clicking on a household Sim
+                            var clickedObjId = World.GetObjectIDAtScreenPos(RMBScrollX, RMBScrollY, GameFacade.GraphicsDevice);
+                            if (clickedObjId > 0)
+                            {
+                                var clickedObj = vm.GetObjectById(clickedObjId);
+                                if (clickedObj is VMAvatar && vm.TS1State.CurrentFamily?.RuntimeSubset.Contains(clickedObj.Object.OBJ.GUID) == true)
+                                {
+                                    // Switch to this family member
+                                    vm.SendCommand(new VMNetChangeControlCmd() { TargetID = clickedObj.ObjectID });
+                                    // Update local state immediately so interactions work right away
+                                    ActiveEntity = clickedObj;
+                                    Queue.QueueOwner = ActiveEntity;
+                                    HITVM.Get().PlaySoundEvent(UISounds.Click);
+                                }
+                            }
+                        }
+                    }
                     RMBScroll = false;
                 }
+
+                // Middle mouse button handling for camera rotation
+                if (state.MouseState.MiddleButton == ButtonState.Pressed)
+                {
+                    if (!MMBScroll)
+                    {
+                        MMBScroll = true;
+                        MMBScrollX = state.MouseState.X;
+                        MMBScrollY = state.MouseState.Y;
+                    }
+                }
+                else
+                {
+                    if (MMBScroll)
+                    {
+                        // Check if it was a click (not a drag)
+                        var deltaX = Math.Abs(state.MouseState.X - MMBScrollX);
+                        var deltaY = Math.Abs(state.MouseState.Y - MMBScrollY);
+                        if (deltaX < 5 && deltaY < 5)
+                        {
+                            // It was a click - rotate camera 90 degrees clockwise
+                            World.State.Rotation = (WorldRotation)(((int)World.State.Rotation + 1) % 4);
+                            HITVM.Get().PlaySoundEvent(UISounds.Click);
+                        }
+                    }
+                    MMBScroll = false;
+                }
+
 
                 if (!LiveMode && PieMenu != null)
                 {
