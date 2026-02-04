@@ -757,10 +757,51 @@ namespace Simitone.Client.UI.Panels
 
                 if (!FoundMe && ActiveEntity != null)
                 {
-                    vm.Context.World.State.CenterTile = new Vector2(ActiveEntity.VisualPosition.X, ActiveEntity.VisualPosition.Y);
+                    // Send change control command to ensure sim is properly selected
+                    // This sets PersistID, registers in ObjectQueries, sets Global 3, and centers camera
+                    vm.SendCommand(new VMNetChangeControlCmd() { TargetID = ActiveEntity.ObjectID });
+                    FoundMe = true;
+                }
+
+                // Fallback: if no sim with expected PersistID, take control of any available avatar
+                if (!FoundMe && ActiveEntity == null && vm.Context.ObjectQueries.Avatars.Count > 0)
+                {
+                    var fallbackAvatar = vm.Context.ObjectQueries.Avatars.FirstOrDefault();
+                    if (fallbackAvatar != null)
+                    {
+                        // Send change control command to properly select this sim
+                        // This sets PersistID, registers in ObjectQueries, sets Global 3, and centers camera
+                        vm.SendCommand(new VMNetChangeControlCmd() { TargetID = fallbackAvatar.ObjectID });
+                        FoundMe = true;
+                    }
+                }
+
+                // Fallback for empty lots (no avatars): center on mailbox, any placed object, or lot center
+                if (!FoundMe && vm.Context.ObjectQueries.Avatars.Count == 0)
+                {
+                    // Try to find mailbox first (GUIDs: 0xEF121974 or 0x1D95C9B0)
+                    var landmark = vm.Entities.FirstOrDefault(x => x.Object.OBJ.GUID == 0xEF121974 || x.Object.OBJ.GUID == 0x1D95C9B0);
+
+                    // If no mailbox, try to find any object that's placed on the lot (for community lots)
+                    if (landmark == null)
+                    {
+                        landmark = vm.Entities.FirstOrDefault(x => x.Position != LotTilePos.OUT_OF_WORLD && x.Position.Level == 1);
+                    }
+
+                    if (landmark != null)
+                    {
+                        vm.Context.World.State.CenterTile = new Vector2(landmark.VisualPosition.X, landmark.VisualPosition.Y);
+                    }
+                    else
+                    {
+                        // Default to lot center
+                        var lotSize = vm.Context.Architecture.Width;
+                        vm.Context.World.State.CenterTile = new Vector2(lotSize / 2f, lotSize / 2f);
+                    }
                     vm.Context.World.State.ScrollAnchor = null;
                     FoundMe = true;
                 }
+
                 Queue.QueueOwner = ActiveEntity;
             }
 
