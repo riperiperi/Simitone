@@ -133,6 +133,10 @@ namespace Simitone.Client
             if (FSOEnvironment.Enable3D) FSO.Files.RC.DGRP3DMesh.InitRCWorkers();
             //FSO.Content.Content.Init(GlobalSettings.Default.StartupPath, GraphicsDevice);
             FSO.SimAntics.VMAvatar.MissingIconProvider = Simitone.Client.UI.Model.UIIconCache.GetObject;
+            
+            // Initialize Free Will setting from config
+            VM.FreeWillEnabled = GlobalSettings.Default.TS1FreeWill;
+            
             base.Initialize();
 
             GameFacade.GameThread = Thread.CurrentThread;

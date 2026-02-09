@@ -2,6 +2,7 @@
 using FSO.Client.UI.Framework;
 using FSO.Common.Utils;
 using FSO.Content;
+using FSO.SimAntics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Simitone.Client.UI.Controls;
@@ -242,6 +243,7 @@ namespace Simitone.Client.UI.Panels
                         new UICatFunc(GameFacade.Strings.GetString("145", "1"), "opt_neigh.png", () => { Game.ReturnToNeighbourhood(); }),
                         new UICatFunc(GameFacade.Strings.GetString("145", "5"), "opt_quit.png", () => { Game.CloseAttempt(); }),
                     });
+                    AddFreeWillToggle(panel);
                     break;
             }
             SetSubpanel(panel);
@@ -432,6 +434,47 @@ namespace Simitone.Client.UI.Panels
                 ShowingSelect = false;
                 OnEndSelect?.Invoke();
             };
+        }
+
+        private void AddFreeWillToggle(UISubpanel parent)
+        {
+            // Index 3 (4th button) to match spacing of existing buttons
+            // Existing buttons use: 50 + i * 120f for button X, 50 + i * 120f - 27 for label X
+            int index = 3;
+            float buttonX = 50 + index * 120f;
+            float labelX = buttonX - 27;
+
+            var label = new UILabel();
+            label.Alignment = TextAlignment.Middle | TextAlignment.Center;
+            label.Wrapped = true;
+            label.Position = new Vector2(labelX - 77, 106);
+            label.Size = new Vector2(120, 1);
+            label.CaptionStyle = label.CaptionStyle.Clone();
+            label.CaptionStyle.Size = 12;
+            label.CaptionStyle.Color = UIStyle.Current.Text;
+            
+            Action updateLabel = () => {
+                bool enabled = VM.FreeWillEnabled;
+                label.Caption = "Free Will:\n" + (enabled ? "ON" : "OFF");
+                label.CaptionStyle.Color = enabled ? UIStyle.Current.Text : UIStyle.Current.NegMoney;
+            };
+            
+            var toggleButton = new UICatButton(Content.Get().CustomUI.Get("opt_freewill.png").Get(GameFacade.GraphicsDevice));
+            toggleButton.Position = new Vector2(buttonX - 50, 16);
+            toggleButton.OnButtonClick += (btn) => {
+                VM.FreeWillEnabled = !VM.FreeWillEnabled;
+                GlobalSettings.Default.TS1FreeWill = VM.FreeWillEnabled;
+                GlobalSettings.Default.Save();
+                updateLabel();
+            };
+            
+            // Animate in like other buttons
+            GameFacade.Screens.Tween.To(label, 0.5f, new Dictionary<string, float>() { { "X", labelX } }, TweenQuad.EaseOut);
+            GameFacade.Screens.Tween.To(toggleButton, 0.5f, new Dictionary<string, float>() { { "X", buttonX } }, TweenQuad.EaseOut);
+            
+            parent.Add(label);
+            parent.Add(toggleButton);
+            updateLabel();
         }
 
         public override void GameResized()
