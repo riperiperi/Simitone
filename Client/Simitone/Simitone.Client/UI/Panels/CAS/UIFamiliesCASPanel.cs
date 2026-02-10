@@ -28,6 +28,7 @@ namespace Simitone.Client.UI.Panels.CAS
         public UITwoStateButton NewButton;
 
         public event Action OnNewFamily;
+        public event Action OnDeleteFamily;
 
         public List<FAMI> Families = new List<FAMI>();
         private VM vm;
@@ -63,6 +64,7 @@ namespace Simitone.Client.UI.Panels.CAS
             DeleteButton = new UITwoStateButton(ui.Get("btn_deletefam.png").Get(gd));
             DeleteButton.Position = new Vector2(sw - 140, sh - 260);
             Add(DeleteButton);
+            DeleteButton.OnButtonClick += (btn) => OnDeleteFamily?.Invoke();
 
             NewButton = new UITwoStateButton(ui.Get("btn_createfam.png").Get(gd));
             NewButton.Position = new Vector2(sw - 140, sh - 380);
