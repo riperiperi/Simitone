@@ -9,6 +9,7 @@
     <AssemblyName>Simitone</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <ApplicationIcon>Icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 

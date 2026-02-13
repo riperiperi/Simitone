@@ -1,7 +1,10 @@
 ﻿using FSO.Client;
 using FSO.Client.UI.Framework;
+using FSO.Client.UI.Controls;
 using FSO.Common.Utils;
+using FSO.Content;
 using Simitone.Client.UI.Screens;
+using Simitone.Client.UI.Panels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,7 +59,74 @@ namespace Simitone.Client
                     }
                 }
                 screen.Initialize(lotName, external);
+                
+                // Show notification about any failed content files
+                ShowFailedContentNotification();
             });
+        }
+        
+        /// <summary>
+        /// Shows a notification to the user about any content files that failed to load.
+        /// This is called after entering game mode so the user can see which custom content
+        /// files are problematic.
+        /// </summary>
+        private static void ShowFailedContentNotification()
+        {
+            var failedFiles = Content.FailedContentFiles;
+            if (failedFiles == null || failedFiles.Count == 0)
+                return;
+            
+            var realFailures = failedFiles
+                .Where(f => f.ErrorType != "DebugInfo")
+                .GroupBy(f => f.Filename)
+                .Select(g => g.First())
+                .ToList();
+            
+            if (realFailures.Count == 0)
+                return;
+            
+            var message = new StringBuilder();
+            message.AppendLine("Some custom content files could not be loaded:");
+            message.AppendLine();
+            
+            int displayCount = Math.Min(realFailures.Count, 3);
+            for (int i = 0; i < displayCount; i++)
+            {
+                var file = realFailures[i];
+                string shortReason = file.ErrorType switch
+                {
+                    "EndOfStream" => "truncated",
+                    "InvalidData" => "invalid format",
+                    "IOException" => "I/O error",
+                    "CatalogError" => "catalog error",
+                    "DecodeError" => "decode failed",
+                    _ => file.ErrorType
+                };
+                message.AppendLine($"• {file.Filename} ({shortReason})");
+            }
+            
+            if (realFailures.Count > 3)
+            {
+                message.AppendLine($"... and {realFailures.Count - 3} more");
+            }
+            
+            message.AppendLine();
+            message.AppendLine("Common causes: corrupted files, missing .cfp files, or wrong format.");
+            message.AppendLine("The game will continue without these items.");
+            
+            // Show the alert
+            UIMobileAlert alert = null;
+            alert = new UIMobileAlert(new UIAlertOptions
+            {
+                Title = "Custom Content Warning",
+                Message = message.ToString(),
+                Buttons = UIAlertButton.Ok((btn) => 
+                { 
+                    alert.Close();
+                })
+            });
+            
+            UIScreen.GlobalShowDialog(alert, true);
         }
 
         public static void EnterCAS()
