@@ -9,6 +9,14 @@ using System.Text;
 
 namespace Simitone.Windows.GameLocator
 {
+    public enum TS1InstallationType
+    {
+        Portable,
+        Steam,
+        Registry,
+        Unknown
+    }
+
     public class WindowsLocator : ILocator
     {
         public string FindTheSimsOnline()
@@ -36,15 +44,30 @@ namespace Simitone.Windows.GameLocator
             //return @"C:\Program Files\Maxis\The Sims Online\TSOClient\".Replace('\\', '/');
         }
 
-        public string FindTheSims1()
+        /// <summary>
+        /// Gets all detected The Sims 1 installations
+        /// </summary>
+        /// <returns>List of tuples containing (description, path, type) for each found installation</returns>
+        public List<(string description, string path, TS1InstallationType type)> GetAllTheSims1Installations()
         {
-            // Search relative directory similar to how macOS and Linux works; allows portability
-            string localDir = @"../The Sims/";
-            if (File.Exists(Path.Combine(localDir, "GameData", "Behavior.iff"))) return localDir;
+            var installations = new List<(string, string, TS1InstallationType)>();
 
+            // Check relative directory
+            string localDir = @"../The Sims/";
+            if (File.Exists(Path.Combine(localDir, "GameData", "Behavior.iff")))
+            {
+                installations.Add(("Portable Install (Relative Directory)", localDir, TS1InstallationType.Portable));
+            }
+
+            // Check for Steam Legacy Collection
+            if (FindTheSimsLegacySteam() is string steamInstallDir)
+            {
+                installations.Add(("Steam - The Sims: Legacy Collection", steamInstallDir, TS1InstallationType.Steam));
+            }
+
+            // Check Windows Registry
             using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
             {
-                //Find the path to TS1 on the user's system.
                 RegistryKey softwareKey = hklm.OpenSubKey("SOFTWARE");
 
                 if (Array.Exists(softwareKey.GetSubKeyNames(), delegate (string s) { return s.Equals("Maxis", StringComparison.InvariantCultureIgnoreCase); }))
@@ -54,15 +77,29 @@ namespace Simitone.Windows.GameLocator
                     {
                         RegistryKey tsoKey = maxisKey.OpenSubKey("The Sims");
                         string installDir = (string)tsoKey.GetValue("InstallPath");
-                        installDir += "\\";
-                        return installDir.Replace('\\', '/');
+                        if (!string.IsNullOrEmpty(installDir))
+                        {
+                            installDir += "\\";
+                            installDir = installDir.Replace('\\', '/');
+                            installations.Add(("Registry Install (CD/DVD/GOG)", installDir, TS1InstallationType.Registry));
+                        }
                     }
                 }
             }
-            // Check for Steam Legacy Collection install
-            if (FindTheSimsLegacySteam() is string steamInstallDir) return steamInstallDir;
 
-            // Fall back to the default install location if the other two checks fail
+            return installations;
+        }
+
+        public string FindTheSims1()
+        {
+            // Get all installations and return the first one found
+            var installations = GetAllTheSims1Installations();
+            if (installations.Count > 0)
+            {
+                return installations[0].path;
+            }
+
+            // Fall back to the default install location if nothing found
             return @"C:\Program Files (x86)\Maxis\The Sims\".Replace('\\', '/');
         }
 

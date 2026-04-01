@@ -45,7 +45,8 @@ namespace Simitone.Windows
                 gameLocator = new WindowsLocator();
 
             var useDX = !linux;
-            var path = gameLocator.FindTheSims1();
+            string path = null;
+            bool pathProvidedViaCommandLine = false;
 
 
             FSOEnvironment.Enable3D = false;
@@ -99,12 +100,152 @@ namespace Simitone.Windows
                                 break;
                             case string s when s.StartsWith("path"): //The Sims path
                                 path = s.Length > 4 ? s.Substring(4).Trim('"').Replace('\\', '/') + "/" : path;
+                                pathProvidedViaCommandLine = true;
                                 break;
                         }
                     }
                 }
             }
             #endregion
+
+            // If no path provided via command line, check if we need to configure installation
+            if (!pathProvidedViaCommandLine && !linux)
+            {
+                var windowsLocator = gameLocator as WindowsLocator;
+                if (windowsLocator != null)
+                {
+                    // Check if installation has already been configured
+                    if (!GlobalSettings.Default.TS1InstallationConfigured)
+                    {
+                        // First time setup - show installation selector
+                        var installations = windowsLocator.GetAllTheSims1Installations();
+                        
+                        if (installations.Count == 0)
+                        {
+                            MessageBox.Show(
+                                "No installation of The Sims was detected.\n\n" +
+                                "Please install The Sims or use the -path command line argument to specify the installation directory.\n\n" +
+                                "Example: Simitone.exe -path\"C:\\Program Files\\Maxis\\The Sims\"",
+                                "The Sims Not Found",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error
+                            );
+                            return;
+                        }
+
+                        // Check if user already has Simitone saves
+                        bool hasExistingSaves = Directory.Exists(Path.Combine(FSOEnvironment.UserDir, "UserData/"));
+                        if (hasExistingSaves)
+                        {
+                            var result = MessageBox.Show(
+                                "Existing Simitone save data was detected.\n\n" +
+                                "If you select a different installation type than before, your saves may not be compatible.\n\n" +
+                                "Do you want to continue with installation selection?",
+                                "Existing Saves Detected",
+                                MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Warning
+                            );
+                            
+                            if (result == DialogResult.No)
+                            {
+                                return;
+                            }
+                        }
+
+                        string selectedInstallType = "";
+                        
+                        if (installations.Count == 1)
+                        {
+                            // Only one installation found, use it automatically
+                            path = installations[0].path;
+                            selectedInstallType = installations[0].description;
+                            GlobalSettings.Default.TS1IsSteamInstall = (installations[0].type == Simitone.Windows.GameLocator.TS1InstallationType.Steam);
+                        }
+                        else
+                        {
+                            // Multiple installations, show selector
+                            using (var selector = new Simitone.Windows.GameLocator.InstallationSelector(installations))
+                            {
+                                if (selector.ShowDialog() == DialogResult.OK)
+                                {
+                                    path = selector.SelectedPath;
+                                    selectedInstallType = installations.Find(i => i.path == path).description;
+                                    GlobalSettings.Default.TS1IsSteamInstall = (selector.SelectedType == Simitone.Windows.GameLocator.TS1InstallationType.Steam);
+                                }
+                                else
+                                {
+                                    // User cancelled
+                                    return;
+                                }
+                            }
+                        }
+
+                        // Mark as configured and save
+                        GlobalSettings.Default.TS1InstallationConfigured = true;
+                        GlobalSettings.Default.StartupPath = path;
+                        GlobalSettings.Default.TS1HybridPath = path;
+                        GlobalSettings.Default.Save();
+
+                        // Show information dialog
+                        string savesPath = GlobalSettings.Default.TS1IsSteamInstall
+                            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), 
+                                         "Saved Games", "Electronic Arts", "The Sims 25", "UserData")
+                            : Path.Combine(path, "UserData");
+                        
+                        string simitoneSavesPath = Path.Combine(FSOEnvironment.UserDir, "UserData");
+
+                        using (var infoDialog = new Simitone.Windows.GameLocator.InstallationInfoDialog(
+                            selectedInstallType,
+                            path,
+                            savesPath,
+                            simitoneSavesPath))
+                        {
+                            infoDialog.ShowDialog();
+                        }
+                    }
+                    else
+                    {
+                        // Already configured, use saved settings
+                        path = GlobalSettings.Default.TS1HybridPath;
+                        
+                        // Validate the path still exists
+                        if (!Directory.Exists(path) || !File.Exists(Path.Combine(path, "GameData", "Behavior.iff")))
+                        {
+                            var result = MessageBox.Show(
+                                $"The configured installation path is no longer valid:\n{path}\n\n" +
+                                "Would you like to reconfigure your installation?\n\n" +
+                                "Click Yes to select a new installation, or No to exit.",
+                                "Installation Not Found",
+                                MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Warning
+                            );
+                            
+                            if (result == DialogResult.Yes)
+                            {
+                                // Reset configuration and restart the detection
+                                GlobalSettings.Default.TS1InstallationConfigured = false;
+                                GlobalSettings.Default.Save();
+                                
+                                MessageBox.Show(
+                                    "Configuration has been reset. Please restart Simitone to select your installation.",
+                                    "Configuration Reset",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Information
+                                );
+                            }
+                            
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            // If still no path (Linux or other edge case), try to detect
+            if (path == null)
+            {
+                path = gameLocator.FindTheSims1();
+            }
+
             useDX = MonogameLinker.Link(useDX);
 
             FSO.Files.ImageLoaderHelpers.BitmapFunction = BitmapReader;
@@ -125,14 +266,22 @@ namespace Simitone.Windows
                 if (GlobalSettings.Default.LanguageCode == 0) GlobalSettings.Default.LanguageCode = 1;
                 FSO.Files.Formats.IFF.Chunks.STR.DefaultLangCode = (FSO.Files.Formats.IFF.Chunks.STRLangCode)GlobalSettings.Default.LanguageCode;
 
-                GlobalSettings.Default.StartupPath = path;
+                // Set runtime settings (these may have been set during first-time config or command line)
+                if (string.IsNullOrEmpty(GlobalSettings.Default.StartupPath))
+                    GlobalSettings.Default.StartupPath = path;
+                if (string.IsNullOrEmpty(GlobalSettings.Default.TS1HybridPath))
+                    GlobalSettings.Default.TS1HybridPath = path;
+                
                 GlobalSettings.Default.TS1HybridEnable = true;
-                GlobalSettings.Default.TS1HybridPath = path;
+                FSO.Content.Content.TS1SteamInstall = GlobalSettings.Default.TS1IsSteamInstall;
                 GlobalSettings.Default.ClientVersion = "0";
                 GlobalSettings.Default.LightingMode = 3;
                 GlobalSettings.Default.AntiAlias = aa ? 1 : 0;
                 GlobalSettings.Default.ComplexShaders = true;
                 GlobalSettings.Default.EnableTransitions = true;
+
+                // Save the updated settings to config.ini
+                GlobalSettings.Default.Save();
 
                 if (ide) new FSO.IDE.VolcanicStartProxy().InitVolcanic(args);
 

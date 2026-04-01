@@ -1,4 +1,4 @@
-﻿using FSO.Client;
+using FSO.Client;
 using FSO.Client.UI.Framework;
 using FSO.Common;
 using FSO.Common.Utils;
@@ -769,8 +769,21 @@ namespace Simitone.Client.UI.Screens
             //get all families that don't have a house from neighbourhood, and populate the list
             //i think house number -1 is townies, so only select 0
             var all = Content.Get().Neighborhood.MainResource.List<FAMI>();
-            var families = all.Where(x => (x.Unknown & 16) > 0 && x.HouseNumber == 0);
-            FamiliesPanel.UpdateFamilies(families.ToList(), vm);
+            
+            // Filter: HouseNumber == 0 (not moved into a house)
+            // AND ChunkID < 1000 (exclude NPCs/townies which have IDs like 2000, 3000+, 4000, 5000, 6000)
+            // AND ChunkID > 0 (exclude "Default Family" which is ChunkID=0 with 0 members)
+            // AND FamilyGUIDs.Length > 0 (must have at least one member)
+            var families = all.Where(x => x.HouseNumber == 0 && x.ChunkID > 0 && x.ChunkID < 1000 && x.FamilyGUIDs.Length > 0).ToList();
+            
+            File.AppendAllText("simitone_debug.log", $"[SetFamilies] Families being added to CAS panel ({families.Count} total):\n");
+            foreach (var fam in families)
+            {
+                File.AppendAllText("simitone_debug.log", 
+                    $"  - ChunkID={fam.ChunkID}, HouseNumber={fam.HouseNumber}, Unknown={fam.Unknown}, Members={fam.FamilyGUIDs.Length}\n");
+            }
+            
+            FamiliesPanel.UpdateFamilies(families, vm);
         }
 
         public void SetFamilyMember(int index)
