@@ -227,7 +227,8 @@ namespace Simitone.Client.UI.Panels
         public float ClockTween;
         public override void Update(UpdateState state)
         {
-            if (state.NewKeys.Contains(Keys.Space))
+            // Only switch Sims with Space if no text input has focus
+            if (state.NewKeys.Contains(Keys.Space) && state.InputManager.GetFocus() == null)
             {
                 var selected = Game.LotControl.ActiveEntity;
                 var familyMembers = Game.vm.Context.ObjectQueries.Avatars.Where(x =>

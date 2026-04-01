@@ -75,6 +75,8 @@ namespace Simitone.Client.UI.Panels
                 && state.NewKeys.Contains(Keys.C)) //prevent change over multiple frames
             {
                 Visible = !Visible;
+                if (!Visible) state.InputManager.SetFocus(null);
+                else state.InputManager.SetFocus(baseTextbox);
             }
             baseTextbox.Visible = Visible;
             if (Visible)
@@ -96,6 +98,14 @@ namespace Simitone.Client.UI.Panels
             shouldHide = true;
             if (string.IsNullOrWhiteSpace(commandString)) return; // a blank textbox should close after hitting enter -- even if a command was never run.
 
+            // Handle weather commands separately (they don't use VMCheatContext)
+            if (trimRepetitions(commandString).StartsWith("weather", StringComparison.OrdinalIgnoreCase))
+            {
+                HandleWeatherCommand(commandString);
+                baseTextbox.CurrentText = "";
+                return;
+            }
+
             var cheat = new VMNetCheatCmd();
             var context = new VMCheatContext();
             var repetitions = getRepetitions(commandString);
@@ -111,7 +121,7 @@ namespace Simitone.Client.UI.Panels
                     context.Amount = (int)VMCheatContext.BudgetCheatPresetAmount.MOTHERLODE;
                     context.CheatBehavior = VMCheatContext.VMCheatType.Budget;
                     break;
-                default: context = parseCommandString(commandString); break;                                       
+                default: context = parseCommandString(commandString); break;
             }
             cheat.Context = context;
             shouldHide = false;
@@ -204,6 +214,64 @@ namespace Simitone.Client.UI.Panels
                 }
             }
             return context;
-        }        
+        }
+
+        private void HandleWeatherCommand(string command)
+        {
+            var parts = command.ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length < 2)
+            {
+                FSO.HIT.HITVM.Get().PlaySoundEvent(UISounds.Error);
+                return;
+            }
+
+            string weatherType = parts[1];
+            int intensity = 50;
+
+            if (parts.Length >= 3 && int.TryParse(parts[2], out int parsedIntensity))
+            {
+                intensity = Math.Clamp(parsedIntensity, 0, 100);
+            }
+
+            short weatherData = 0;
+
+            switch (weatherType)
+            {
+                case "rain":
+                    weatherData = (short)((1 << 8) | (0 << 9) | intensity);
+                    break;
+                case "storm":
+                case "thunder":
+                    if (parts.Length < 3) intensity = 75;
+                    weatherData = (short)((1 << 8) | (1 << 11) | (0 << 9) | intensity);
+                    break;
+                case "snow":
+                    weatherData = (short)((1 << 8) | (1 << 9) | intensity);
+                    break;
+                case "hail":
+                    weatherData = (short)((1 << 8) | (2 << 9) | intensity);
+                    break;
+                case "clear":
+                    weatherData = (short)(1 << 8);
+                    break;
+                case "auto":
+                    weatherData = 0;
+                    break;
+                default:
+                    FSO.HIT.HITVM.Get().PlaySoundEvent(UISounds.Error);
+                    return;
+            }
+
+            if (ts1VM?.Context?.Blueprint?.Weather != null)
+            {
+                ts1VM.Context.Blueprint.Weather.SetWeather(weatherData);
+                FSO.HIT.HITVM.Get().PlaySoundEvent(UISounds.Click);
+            }
+            else
+            {
+                FSO.HIT.HITVM.Get().PlaySoundEvent(UISounds.Error);
+            }
+        }
     }
 }
