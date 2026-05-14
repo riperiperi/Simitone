@@ -45,7 +45,7 @@ namespace Simitone.Client.UI.Controls
         private int MouseDownID = -1;
         private Point MouseDownAt;
         private bool InScroll;
-        private UITSContainer LastSelected;
+        private UITSContainer LastSelected, LastHovered;
         private List<float> ScrollVelocityHistory = new List<float>();
 
         public void MouseEvents(UIMouseEventType type, UpdateState state)
@@ -97,6 +97,12 @@ namespace Simitone.Client.UI.Controls
             return (VerticalMode) ? p.Y : p.X;
         }
 
+        public void Unselect()
+        {
+            LastSelected?.Deselected();
+            LastSelected = null;
+        }
+
         public void Select(Point at)
         {
             var item = (int)(GetPAxis(at) + Scroll) / ItemWidth;
@@ -107,6 +113,18 @@ namespace Simitone.Client.UI.Controls
                 LastSelected?.Deselected();
                 rItem.Selected();
                 LastSelected = rItem;
+            }
+        }
+        private void Hover(Point at)
+        {
+            var item = (int)(GetPAxis(at) + Scroll) / ItemWidth;
+            if (item >= LengthProvider()) return;
+            var rItem = GetOrPrepare(item);
+            if (rItem != null)
+            {
+                LastHovered?.Unhovered();
+                rItem.Hovered();
+                LastHovered = rItem;
             }
         }
 
@@ -141,7 +159,7 @@ namespace Simitone.Client.UI.Controls
 
             //perform scroll and input management.
 
-            if (MouseDownID != -1)
+            if (MouseDownID != -1) // mouse button down
             {
                 var lastMouse = state.MouseStates.FirstOrDefault(x => x.ID == MouseDownID);
                 if (lastMouse != null)
@@ -157,6 +175,16 @@ namespace Simitone.Client.UI.Controls
                         MouseDownAt = pos;
                     }
                 }
+            }
+            else if (HitTestArea(state.MouseState, HitTest.Region, false)) // mouse hovering
+            {
+                //mouse inside boundaires of this control - Update hovered item
+                Hover(GlobalPoint(state.MouseState.Position.ToVector2()).ToPoint());
+            }
+            else
+            { // mouse left boundaries - unhover the currently hovered item
+                LastHovered?.Unhovered();
+                LastHovered = null;
             }
 
             ScrollVelocityHistory.Insert(0, ScrollVelocity);
@@ -224,20 +252,39 @@ namespace Simitone.Client.UI.Controls
                 Remove(child);
             }
             LastSelected = null;
-        }
+        }        
     }
 
     public class UITSContainer : UIContainer
     {
         public int ItemID;
+
+        /// <summary>
+        /// Gets if the user selected this item
+        /// </summary>
+        public bool IsSelected { get; protected set; }
+        /// <summary>
+        /// Gets if the mouse is currently hovering over this item
+        /// </summary>
+        public bool IsHovered { get; protected set; }
+
         public virtual void Selected()
         {
-
+            IsSelected = true;
         }
 
         public virtual void Deselected()
         {
+            IsSelected = false;
+        }
 
+        public virtual void Hovered()
+        {
+            IsHovered = true;
+        }
+        public virtual void Unhovered()
+        {
+            IsHovered = false;
         }
     }
 }

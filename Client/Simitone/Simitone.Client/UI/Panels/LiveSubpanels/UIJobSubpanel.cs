@@ -18,6 +18,8 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
 {
     public class UIJobSubpanel : UISubpanel
     {
+        const string STRTable = "136", STRFile = "live";
+
         public UILabel PerformanceTitle;
         public UIMotiveBar PerformanceBar;
         public UILabel JobTitle;
@@ -27,15 +29,16 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
         private JobLevel LastJobLevel;
 
         private UISkillDisplay[] Skills;
-        private string[] SkillNames = new string[]
-        {
-            "Cooking",
-            "Mechanical",
-            "Charisma",
-            "Body",
-            "Logic",
-            "Creativity"
+        private enum UISkillBarElement { 
+            Cooking,
+            Mechanical,
+            Charisma,
+            Body,
+            Logic,
+            Creativity
         };
+
+        private string UnemployedText => GameFacade.Strings.GetString(STRFile, STRTable, "7"); // index 7 is unemployed
 
         private VMPersonDataVariable[] SkillInd = new VMPersonDataVariable[]
         {
@@ -48,7 +51,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
         };
 
         public UIJobSubpanel(TS1GameScreen game) : base(game)
-        {
+        {            
             PerformanceTitle = new UILabel();
             PerformanceTitle.Caption = "Performance";
             PerformanceTitle.Position = new Vector2(79, 16);
@@ -81,7 +84,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
                 Add(Skills[i]);
 
                 var name = new UILabel();
-                name.Caption = SkillNames[i];
+                name.Caption = GameFacade.Strings.GetString(STRFile, STRTable, (i+1).ToString());
                 name.Position = new Vector2(332 + (i % 3) * 140, 11 + 60 * (i / 3));
                 InitLabel(name);
             }
@@ -119,7 +122,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
             {
                 if (LastPerformance != -200)
                 {
-                    JobTitle.Caption = "Unemployed";
+                    JobTitle.Caption = UnemployedText;
                     SalaryTitle.Caption = "";
                     PerformanceBar.Visible = false;
                     PerformanceTitle.Visible = false;

@@ -9,6 +9,21 @@
     <AssemblyName>Simitone.Client</AssemblyName>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Content\uigraphics\common\button.mobile.png" />
+    <None Remove="Content\uigraphics\common\greenbutton.mobile.png" />
+    <None Remove="Content\uigraphics\dialog\check.bmp" />
+    <None Remove="Content\uigraphics\dialog\check.png" />
+    <None Remove="Content\uigraphics\dialog\radio.bmp" />
+    <None Remove="Content\uigraphics\dialog\radio.png" />
+    <None Remove="Content\uigraphics\live\modes\opt_audio.png" />
+    <None Remove="Content\uigraphics\live\modes\opt_general.png" />
+    <None Remove="Content\uigraphics\live\modes\opt_gfx.png" />
+    <None Remove="Content\uigraphics\live\modes\opt_lang.png" />
+    <None Remove="Content\uigraphics\live\modes\opt_setting.png" />
+    <None Remove="Content\uigraphics\ngbh\ngbh_shadow.png" />
+  </ItemGroup>
   
   <ItemGroup>
     <Content Include="Content\3D\TEX_0.png">
@@ -77,7 +92,13 @@
     <Content Include="Content\uigraphics\common\btn_back.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\uigraphics\common\button.mobile.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\uigraphics\common\circle10px.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\common\greenbutton.mobile.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\uigraphics\desktop\d_live_bg.png">
@@ -140,7 +161,13 @@
     <Content Include="Content\uigraphics\desktop\d_live_zoomp.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\uigraphics\common\check.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\uigraphics\dialog\ngbh_outline.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\common\radio.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\uigraphics\live\blank_blue.png">
@@ -464,6 +491,18 @@
     <Content Include="Content\uigraphics\live\modes\live_relationships.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\uigraphics\live\modes\opt_audio.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\modes\opt_general.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\modes\opt_gfx.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\modes\opt_lang.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Content\uigraphics\live\modes\opt_neigh.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -471,6 +510,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\uigraphics\live\modes\opt_save.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\live\modes\opt_setting.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\uigraphics\live\money_bg.png">
@@ -621,6 +663,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\uigraphics\ngbh\ngbh_opt.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\uigraphics\ngbh\ngbh_shadow.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\uigraphics\ngbh\ngbh_studio.png">

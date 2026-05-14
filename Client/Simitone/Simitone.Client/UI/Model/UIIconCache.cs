@@ -58,7 +58,7 @@ namespace Simitone.Client.UI.Model
             var HeadCamera = new BasicCamera(GameFacade.GraphicsDevice, new Vector3(0.0f, 7.0f, -17.0f), Vector3.Zero, Vector3.Up);
 
             var pos2 = m_Head.Skeleton.GetBone("HEAD").AbsolutePosition;
-            pos2.Y += 0.1f;
+            pos2.Y += ava.IsDog ? .25f : 0.1f;
             HeadCamera.Position = new Vector3(0, pos2.Y, 12.5f);
             HeadCamera.FOV = (float)Math.PI / 3f;
             HeadCamera.Target = pos2;

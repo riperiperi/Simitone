@@ -28,6 +28,8 @@ namespace Simitone.Client.UI.Panels.LotControls
 {
     public class UISelectSkinAlert : UIMobileDialog
     {
+        private const string Title_Avatar_StringTable = "220", Title_Pet_StringTable = "221", TitleID = "4";
+
         public UISelectSkinPanel NPanel;
         /*
         public short SelectedNeighbour
@@ -42,8 +44,14 @@ namespace Simitone.Client.UI.Panels.LotControls
 
         public UISelectSkinAlert(VMAvatar target, string type, VM vm)
         {
+            //get skin type
             var pet = type == "cat" || type == "dog";
-            Caption = pet ? "Adopt a Pet" : "Please Select Outfit";
+
+            //get title text
+            string titleTable = pet ? Title_Pet_StringTable : Title_Avatar_StringTable;
+            string title = GameFacade.Strings.GetString(titleTable, TitleID);
+            
+            Caption = title;
             SetHeight(600);
             NPanel = new UISelectSkinPanel(target, type, vm);
             NPanel.Position = new Microsoft.Xna.Framework.Vector2((Width - 1030) / 2, 110);
@@ -139,7 +147,7 @@ namespace Simitone.Client.UI.Panels.LotControls
             OKButton.Width = 275;
             Add(OKButton);
 
-            CancelButton = new UIBigButton(true);
+            CancelButton = new UIBigButton(false);
             CancelButton.Caption = GameFacade.Strings.GetString("142", "1");
             CancelButton.Position = new Microsoft.Xna.Framework.Vector2((515 - 300) - 137, 370);
             CancelButton.OnButtonClick += (btn) => { OnResult?.Invoke(-1); };

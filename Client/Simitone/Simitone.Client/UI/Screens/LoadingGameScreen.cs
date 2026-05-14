@@ -15,6 +15,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using FSO.Common.Utils;
 using FSO.SimAntics;
+using FSO.Files.Formats.IFF.Chunks;
 
 namespace Simitone.Client.UI.Screens
 {
@@ -30,6 +31,24 @@ namespace Simitone.Client.UI.Screens
             "Arranging Furniture...", //InitObjects = 6,
             "Building Concert Hall...", //InitArch = 7,
             " " //Done = 8,
+        };
+
+        /*
+        /// Localization: These are strings found in splashprogress table in UIText.dir
+        /// Given that the English load text is hard coded here, default to og strings  
+        /// until these clever ones are put into their own file and translated per language.
+        */
+        private string[] LocalizedLoadText =
+        {
+            "", // started
+            "4", //scanning for files = 1
+            "5", // init global = 2
+            "6", // init bcf = 3
+            "7", // init avatars = 4
+            "8",  // init audio = 5
+            "9", // init objects = 6
+            "10", // init arch = 7
+            " ", // done = 8
         };
 
         public UISimitoneBg Bg;
@@ -142,6 +161,31 @@ namespace Simitone.Client.UI.Screens
 
         public ContentLoadingProgress LastProgress = ContentLoadingProgress.Invalid;
 
+        private string getSplashTitleText()
+        {
+            FSO.Files.Formats.IFF.Chunks.STRLangCode? LANG = (GameFacade.Game as SimitoneGame)?.CurrentLanguage;
+            if (LANG == null) LANG = STRLangCode.Default;
+
+            int index = (int)LastProgress;
+
+            switch (LANG)
+            {
+                case STRLangCode.Default:
+                case STRLangCode.EnglishUS:
+                case STRLangCode.EnglishUK:
+                    return LoadText[index];
+                default:
+                    //** localize return splash title text from STR
+
+                    string value = LocalizedLoadText[index];
+                    if (string.IsNullOrWhiteSpace(value)) return value; // intentionally blank
+                    //get from STR
+                    var localizedText = GameFacade.Strings.GetString("155", value);
+                    if (localizedText == "***MISSING***") goto case STRLangCode.Default; // uh, not found?
+                    return localizedText;
+            }
+        }
+
         public override void Update(UpdateState state)
         {
             if (LastProgress != Content.LoadProgress)
@@ -152,7 +196,7 @@ namespace Simitone.Client.UI.Screens
                 {
                     LastLabel.Kill();
                 }
-                LastLabel = new UISimitoneLoadLabel(LoadText[(int)LastProgress]);
+                LastLabel = new UISimitoneLoadLabel(getSplashTitleText());
                 LastLabel.Position = new Vector2(ScreenWidth/2, ScreenHeight * 0.75f);
                 Add(LastLabel);
 

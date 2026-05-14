@@ -1,6 +1,7 @@
 ﻿using FSO.Client;
 using FSO.Client.UI.Controls;
 using FSO.Client.UI.Framework;
+using FSO.Common.Rendering.Framework.Model;
 using FSO.Content;
 using FSO.Files.Formats.IFF.Chunks;
 using Microsoft.Xna.Framework;
@@ -42,7 +43,8 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels.Catalog
                 else DrawLocalTexture(SBatch, Icon, new Rectangle(0, 0, Icon.Width / 2, Icon.Height), new Vector2((iconSize-90) / -2, (iconSize- 105) / -2), new Vector2(iconSize / Icon.Height, iconSize / Icon.Height));
             }
 
-            if (Outlined) DrawLocalTexture(SBatch, Outline, null, new Vector2(Outline.Width - 90, Outline.Height - 105) / -2, Vector2.One, UIStyle.Current.ActiveSelection);
+            if (Outlined) 
+                DrawLocalTexture(SBatch, Outline, null, new Vector2(Outline.Width - 90, Outline.Height - 105) / -2, Vector2.One, IsSelected ? UIStyle.Current.ActiveSelection : UIStyle.Current.HoverSelection);
             base.Draw(SBatch);
         }
 
@@ -67,13 +69,26 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels.Catalog
 
         public override void Selected()
         {
+            base.Selected();
             Outlined = true;
             BudgetProvider.Selected(ItemID);
         }
 
         public override void Deselected()
         {
-            Outlined = false;
+            base.Deselected();            
+            Outlined = IsHovered ? true : false;
+        }
+
+        public override void Hovered()
+        {
+            base.Hovered();
+            Outlined = true;
+        }
+        public override void Unhovered()
+        {
+            base.Unhovered();
+            Outlined = IsSelected ? true : false;
         }
 
         public Texture2D GetObjIcon(uint GUID)

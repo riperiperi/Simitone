@@ -90,9 +90,16 @@ namespace Simitone.Client.UI.Panels
 
             if (options.TextEntry)
             {
-                TextBox = new UITextBox();
-                TextBox.MaxChars = options.MaxChars;
+                TextBox = new UITextBox()
+                {
+                    MaxChars = options.MaxChars,
+                    TextStyle = m_TextStyle.Clone(),
+                    FlashOnEmpty = true, // like ts1, draw attention to how this text box requires a response
+                    FrameColor = UIStyle.Current.TextBoxSelectionFrameColor
+                };
                 this.Add(TextBox);
+
+                ComputeText();
             }
 
             /** Position buttons **/
@@ -119,16 +126,8 @@ namespace Simitone.Client.UI.Panels
             else
             {
                 h += 32;
-            }
-
-            if (m_Options.TextEntry)
-            {
-                TextBox.X = 32;
-                TextBox.Y = h - 54;
-                TextBox.SetSize(w - 64, 25);
-                h += 45;
-            }
-
+            } 
+            
             h = ResetButtons(h, true);
 
             if (Height != h)
@@ -243,16 +242,35 @@ namespace Simitone.Client.UI.Panels
         private void ComputeText()
         {
             var margin = (IconSpace.X > 0) ? 50 : 80;
+            var maxWidth = Width - margin * 2;
+            int topLeft = 105;
+
             m_MessageText = TextRenderer.ComputeText(m_Options.Message, new TextRendererOptions
             {
                 Alignment = TextAlignment.Left | TextAlignment.Top,
-                MaxWidth = Width - margin * 2,
-                Position = new Microsoft.Xna.Framework.Vector2(margin, 105),
+                MaxWidth = maxWidth,
+                Position = new Microsoft.Xna.Framework.Vector2(margin, topLeft),
                 Scale = _Scale,
                 TextStyle = m_TextStyle,
                 WordWrap = true,
                 TopLeftIconSpace = IconSpace
-            }, this);
+            }, this);            
+
+            //TextBox target should go right underneath the content of the textbox.
+            if (m_Options.TextEntry && TextBox != null)
+            {
+                int msgYBotLeft = m_MessageText.BoundingBox.Bottom;
+                if (m_MessageText.BoundingBox.Height == 0) // this may be a bug, this returns zero due to logic within TextRenderer
+                    msgYBotLeft += (int)((m_MessageText.Lines + 1) * (m_TextStyle.MeasureString("B").Y * _Scale.Y)); // calculate it manually.
+
+                int yMargin = 10;
+                int y = msgYBotLeft + yMargin;
+                int w = Math.Max(Math.Min(maxWidth, m_MessageText.MaxWidth),200);
+
+                TextBox.X = IconSpace.X + margin;
+                TextBox.Y = y;
+                TextBox.SetSize(w, 50);
+            }
 
             m_TextDirty = false;
         }

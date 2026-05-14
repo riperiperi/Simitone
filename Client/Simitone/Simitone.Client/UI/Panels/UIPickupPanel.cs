@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using FSO.Common.Rendering.Framework.Model;
 using FSO.Common.Rendering.Framework.IO;
 using FSO.UI.Panels;
+using Simitone.Client.UI.Screens;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -35,15 +36,22 @@ namespace Simitone.Client.UI.Panels
 
         public UIPickupPanel()
         {
+            var scr = (TS1GameScreen.Current as TS1GameScreen);
+
+            int LEFT = 450;
+
+            if (scr?.Desktop ?? false)
+                LEFT = 300;
+
             TitleLabel = new UILabel();
-            TitleLabel.Position = new Vector2(450, 14);
+            TitleLabel.Position = new Vector2(LEFT, 14);           
             TitleLabel.CaptionStyle = TitleLabel.CaptionStyle.Clone();
             TitleLabel.CaptionStyle.Size = 19;
             TitleLabel.CaptionStyle.Color = UIStyle.Current.SecondaryText;
             Add(TitleLabel);
 
             SubtextLabel = new UILabel();
-            SubtextLabel.Position = new Vector2(450, 44);
+            SubtextLabel.Position = new Vector2(LEFT, 44);
             SubtextLabel.CaptionStyle = SubtextLabel.CaptionStyle.Clone();
             SubtextLabel.CaptionStyle.Size = 12;
             SubtextLabel.CaptionStyle.Color = UIStyle.Current.Text;
@@ -51,11 +59,13 @@ namespace Simitone.Client.UI.Panels
 
             CancelButton = new UICatButton(Content.Get().CustomUI.Get("cat_cancel.png").Get(GameFacade.GraphicsDevice));
             CancelButton.Position = new Vector2(174, 31);
+            if (scr?.Desktop ?? false)
+                CancelButton.Position = new Vector2(158, 31);
             CancelButton.OnButtonClick += CancelButton_OnButtonClick;
             Add(CancelButton);
 
             ClickHandler =
-                ListenForMouse(new Rectangle(0, 0, 400, 128), new UIMouseEvent(OnMouseEvent));
+                ListenForMouse(new Rectangle(LEFT, 0, scr.ScreenWidth-LEFT, 128), new UIMouseEvent(OnMouseEvent));
         }
 
         private void OnMouseEvent(UIMouseEventType type, UpdateState state)

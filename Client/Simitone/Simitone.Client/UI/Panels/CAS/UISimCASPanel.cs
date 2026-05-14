@@ -61,6 +61,8 @@ namespace Simitone.Client.UI.Panels.CAS
 
         public UISimCASPanel()
         {
+            string getString(int index) => GameFacade.Strings.GetString("130", index.ToString());
+
             var ui = Content.Get().CustomUI;
             var gd = GameFacade.GraphicsDevice;
 
@@ -80,7 +82,7 @@ namespace Simitone.Client.UI.Panels.CAS
             Add(BioTabButton);
 
             FirstNameTitle = new UILabel();
-            FirstNameTitle.Caption = "First Name";
+            FirstNameTitle.Caption = "First Name"; // no compatible translation: eng says "Enter" in front
             FirstNameTitle.Position = new Vector2(96, 6);
             InitLabel(FirstNameTitle, 15);
             FirstNameTitle.CaptionStyle.Color = UIStyle.Current.SecondaryText;
@@ -97,21 +99,21 @@ namespace Simitone.Client.UI.Panels.CAS
             // SIM TAB
 
             SimGenderTitle = new UILabel();
-            SimGenderTitle.Caption = "Gender";
+            SimGenderTitle.Caption = "Gender"; // no compatible localization
             SimGenderTitle.Size = Vector2.One;
             SimGenderTitle.Position = new Vector2(113 + 32, 95);
             SimGenderTitle.Alignment = TextAlignment.Middle | TextAlignment.Center;
             InitLabel(SimGenderTitle, 15);
 
             SimAgeTitle = new UILabel();
-            SimAgeTitle.Caption = "Age";
+            SimAgeTitle.Caption = "Age"; // no compatible localization
             SimAgeTitle.Size = Vector2.One;
             SimAgeTitle.Position = new Vector2(212 + 32, 95);
             SimAgeTitle.Alignment = TextAlignment.Middle | TextAlignment.Center;
             InitLabel(SimAgeTitle, 15);
 
             SimSkinTitle = new UILabel();
-            SimSkinTitle.Caption = "Skin Color";
+            SimSkinTitle.Caption = "Skin Color"; // no compatible localization
             SimSkinTitle.Size = Vector2.One;
             SimSkinTitle.Position = new Vector2(302 + 45, 95);
             SimSkinTitle.Alignment = TextAlignment.Middle | TextAlignment.Center;
@@ -159,35 +161,35 @@ namespace Simitone.Client.UI.Panels.CAS
             PerNeatTitle.Position = new Vector2(99, 85);
             PerNeatTitle.Size = new Vector2(110, 1);
             PerNeatTitle.Alignment = TextAlignment.Right;
-            PerNeatTitle.Caption = "Neat:";
+            PerNeatTitle.Caption = getString(17);
             InitLabel(PerNeatTitle, 15);
 
             PerOutgoingTitle = new UILabel();
             PerOutgoingTitle.Position = new Vector2(99, 122);
             PerOutgoingTitle.Size = new Vector2(110, 1);
             PerOutgoingTitle.Alignment = TextAlignment.Right;
-            PerOutgoingTitle.Caption = "Outgoing:";
+            PerOutgoingTitle.Caption = getString(18);
             InitLabel(PerOutgoingTitle, 15);
 
             PerActiveTitle = new UILabel();
             PerActiveTitle.Position = new Vector2(99, 160);
             PerActiveTitle.Size = new Vector2(110, 1);
             PerActiveTitle.Alignment = TextAlignment.Right;
-            PerActiveTitle.Caption = "Active:";
+            PerActiveTitle.Caption = getString(19);
             InitLabel(PerActiveTitle, 15);
 
             PerPlayfulTitle = new UILabel();
             PerPlayfulTitle.Position = new Vector2(99, 200);
             PerPlayfulTitle.Size = new Vector2(110, 1);
             PerPlayfulTitle.Alignment = TextAlignment.Right;
-            PerPlayfulTitle.Caption = "Playful:";
+            PerPlayfulTitle.Caption = getString(20);
             InitLabel(PerPlayfulTitle, 15);
 
             PerNiceTitle = new UILabel();
             PerNiceTitle.Position = new Vector2(99, 238);
             PerNiceTitle.Size = new Vector2(110, 1);
             PerNiceTitle.Alignment = TextAlignment.Right;
-            PerNiceTitle.Caption = "Nice:";
+            PerNiceTitle.Caption = getString(21);
             InitLabel(PerNiceTitle, 15);
 
             PersonalityTex = ui.Get("skill.png").Get(gd);
@@ -202,7 +204,7 @@ namespace Simitone.Client.UI.Panels.CAS
             //BIO TAB
             BioTitle = new UILabel();
             BioTitle.Position = new Vector2(99, 85);
-            BioTitle.Caption = "Bio:";
+            BioTitle.Caption = getString(24);
             InitLabel(BioTitle, 15);
 
             BioBG = new UIImage(ui.Get("cas_bio_bg.png").Get(gd)).With9Slice(15, 15, 15, 15);

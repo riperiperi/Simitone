@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
+using static System.TimeZoneInfo;
 
 namespace Simitone.Client.UI.Panels
 {
@@ -59,23 +61,62 @@ namespace Simitone.Client.UI.Panels
         private Texture2D TransImage;
         private Action TransAction;
 
-        public UITransDialog(string transType, Action transAction)
+        /// <summary>
+        /// Creates a new <see cref="UITransDialog"/> with the given "trans_{transType}.png" resource as an icon, and action to complete during the transition phase
+        /// </summary>
+        /// <param name="Icon"></param>
+        /// <param name="Callback"></param>
+        public UITransDialog(string transType, Action transAction, bool delayedStart = false)
         {
             var ui = Content.Get().CustomUI;
-            TransImage = ui.Get($"trans_{transType}.png").Get(GameFacade.GraphicsDevice);
-            TransAction = transAction;
+            Setup(ui.Get($"trans_{transType}.png").Get(GameFacade.GraphicsDevice), transAction, delayedStart);
+        }
 
-            Diag = new UIDiagonalStripe(new Point(0,0), UIDiagonalStripeSide.RIGHT, UIStyle.Current.TransColor);
+        /// <summary>
+        /// Creates a new <see cref="UITransDialog"/> with the given icon and action to complete during the transition phase
+        /// </summary>
+        /// <param name="Icon"></param>
+        /// <param name="Callback"></param>
+        public UITransDialog(Texture2D Icon, Action Callback, bool delayedStart = false)
+        {
+            Setup(Icon, Callback, delayedStart);
+        }
+
+        private void Setup(Texture2D Icon, Action Callback, bool delayedStart)
+        {
+            TransImage = Icon;
+            TransAction = Callback;
+
+            Diag = new UIDiagonalStripe(new Point(0, 0), UIDiagonalStripeSide.RIGHT, UIStyle.Current.TransColor);
+
+            if (!delayedStart)
+                BeginTransition();
+        }
+
+        public static UITransDialog CreateWithCustomUIIcon(string CustomUIIcon, Action Callback)
+        {
+            var ui = Content.Get().CustomUI;
+            return new(ui.Get(CustomUIIcon).Get(GameFacade.GraphicsDevice), Callback);
+        }    
+
+        public override void Removed()
+        {
+            base.Removed();
+        }
+
+        /// <summary>
+        /// Starts the transition if it has not yet been started / completed.
+        /// </summary>
+        public void BeginTransition()
+        {
+            if (FiredTransition || TransPct != 0)            
+                throw new InvalidOperationException("This transition object has already completed. Please make a new transition instance to play the transition again.");            
+            
             Add(Diag);
             UIScreen.GlobalShowDialog(this, true);
             GameFacade.Screens.Tween.To(this, 0.2f, new Dictionary<string, float>() { { "TransPct", 1f } });
 
             TransPct = TransPct;
-        }
-
-        public override void Removed()
-        {
-            base.Removed();
         }
 
         public int DrawsSince = 0;

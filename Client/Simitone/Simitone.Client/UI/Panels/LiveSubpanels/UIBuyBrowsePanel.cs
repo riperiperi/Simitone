@@ -347,6 +347,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
             screen.LotControl.ObjectHolder.OnPickup += ObjectHolder_OnPickup;
             screen.LotControl.ObjectHolder.OnPutDown += ObjectHolder_OnPutDown;
             screen.LotControl.ObjectHolder.OnDelete += ObjectHolder_OnDelete;
+            
             HoldingEvents = true;
         }
 
@@ -354,6 +355,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
         {
             Game.Frontend.MainPanel.SetSubpanelPickup(1f);
             Game.LotControl.QueryPanel.Active = false;
+            CatContainer.Unselect(); // unselect the button in the interface if we aren't placing more
             ItemID = -1;
         }
 
@@ -373,6 +375,7 @@ namespace Simitone.Client.UI.Panels.LiveSubpanels
                 }
                 else
                 {
+                    CatContainer.Unselect(); // unselect the button in the interface if we aren't placing more
                     ItemID = -1;
                 }
             }

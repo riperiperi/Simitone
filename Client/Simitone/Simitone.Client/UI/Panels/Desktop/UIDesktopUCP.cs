@@ -65,17 +65,7 @@ namespace Simitone.Client.UI.Panels.Desktop
             "3rd",
             "4th",
             "5th"
-        };
-
-        public static Dictionary<int, int> RemapSpeed = new Dictionary<int, int>()
-        {
-            {0, 4}, //pause
-            {1, 1}, //1 speed
-            {3, 2}, //2 speed
-            {10, 3}, //3 speed
-        };
-
-        public static Dictionary<int, int> ReverseRemap = RemapSpeed.ToDictionary(x => x.Value, x => x.Key);
+        };                
 
         public UIDesktopUCP(TS1GameScreen screen)
         {
@@ -286,7 +276,7 @@ namespace Simitone.Client.UI.Panels.Desktop
                 FloorUpButton.Disabled = LastFloor == 5;
             }
 
-            var speed = RemapSpeed[Math.Max(0, vm.SpeedMultiplier)];
+            var speed = GameplaySpeed.RemapSpeed[Math.Max(0, vm.SpeedMultiplier)];
             if (speed != LastSpeed)
             {
                 /*
@@ -296,10 +286,15 @@ namespace Simitone.Client.UI.Panels.Desktop
 
                 for (int i = 0; i < 4; i++)
                 {
-                    SpeedButtons[i].Selected = (i + 1 == speed);
+                    bool currentSpeedButton = (i + 1 == speed);
+
+                    var button = SpeedButtons[i] as UIStencilButton;
+                    button.Selected = currentSpeedButton;
+                    button.ActiveColor = (vm.SpeedMultiplier == GameplaySpeed.Disabled && currentSpeedButton) ? Color.Red : UIStyle.Current.BtnActive;
+                    button.Disabled = vm.SpeedMultiplier == GameplaySpeed.Disabled && !currentSpeedButton;
                 }
                 LastSpeed = speed;
-            }
+            }            
             
             if (LastCut != Game.LotControl.WallsMode)
             {
@@ -443,62 +438,70 @@ namespace Simitone.Client.UI.Panels.Desktop
 
         public void SwitchSpeed(int speed)
         {
-            var vm = Game.vm;
-            if (vm.SpeedMultiplier == -1) return;
-            switch (vm.SpeedMultiplier)
-            {
-                case 0:
-                    switch (speed)
-                    {
-                        case 1:
-                            HITVM.Get().PlaySoundEvent(UISounds.SpeedPTo1); break;
-                        case 2:
-                            HITVM.Get().PlaySoundEvent(UISounds.SpeedPTo2); break;
-                        case 3:
-                            HITVM.Get().PlaySoundEvent(UISounds.SpeedPTo3); break;
-                    }
-                    break;
-                case 1:
-                    switch (speed)
-                    {
-                        case 4:
-                            HITVM.Get().PlaySoundEvent(UISounds.Speed1ToP); break;
-                        case 2:
-                            HITVM.Get().PlaySoundEvent(UISounds.Speed1To2); break;
-                        case 3:
-                            HITVM.Get().PlaySoundEvent(UISounds.Speed1To3); break;
-                    }
-                    break;
-                case 3:
-                    switch (speed)
-                    {
-                        case 4:
-                            HITVM.Get().PlaySoundEvent(UISounds.Speed2ToP); break;
-                        case 1:
-                            HITVM.Get().PlaySoundEvent(UISounds.Speed2To1); break;
-                        case 3:
-                            HITVM.Get().PlaySoundEvent(UISounds.Speed2To3); break;
-                    }
-                    break;
-                case 10:
-                    switch (speed)
-                    {
-                        case 4:
-                            HITVM.Get().PlaySoundEvent(UISounds.Speed3ToP); break;
-                        case 1:
-                            HITVM.Get().PlaySoundEvent(UISounds.Speed3To1); break;
-                        case 2:
-                            HITVM.Get().PlaySoundEvent(UISounds.Speed3To2); break;
-                    }
-                    break;
-            }
+            var scr = (UIScreen.Current as TS1GameScreen);
+            scr?.ChangeSpeedTo(speed); // change speed using ts1gamescr host
 
-            switch (speed)
+            //fallback use only -- should generally have one unified way to change core game speed with special considerations
+            if (scr == null)
             {
-                case 4: vm.SpeedMultiplier = 0; break;
-                case 1: vm.SpeedMultiplier = 1; break;
-                case 2: vm.SpeedMultiplier = 3; break;
-                case 3: vm.SpeedMultiplier = 10; break;
+                var vm = Game.vm;
+                if (vm.SpeedMultiplier == GameplaySpeed.Disabled) return;
+                switch (vm.SpeedMultiplier)
+                {
+                    case 0:
+                        switch (speed)
+                        {
+                            case 1:
+                                HITVM.Get().PlaySoundEvent(UISounds.SpeedPTo1); break;
+                            case 2:
+                                HITVM.Get().PlaySoundEvent(UISounds.SpeedPTo2); break;
+                            case 3:
+                                HITVM.Get().PlaySoundEvent(UISounds.SpeedPTo3); break;
+                        }
+                        break;
+                    case 1:
+                        switch (speed)
+                        {
+                            case 4:
+                                HITVM.Get().PlaySoundEvent(UISounds.Speed1ToP); break;
+                            case 2:
+                                HITVM.Get().PlaySoundEvent(UISounds.Speed1To2); break;
+                            case 3:
+                                HITVM.Get().PlaySoundEvent(UISounds.Speed1To3); break;
+                        }
+                        break;
+                    case 3:
+                        switch (speed)
+                        {
+                            case 4:
+                                HITVM.Get().PlaySoundEvent(UISounds.Speed2ToP); break;
+                            case 1:
+                                HITVM.Get().PlaySoundEvent(UISounds.Speed2To1); break;
+                            case 3:
+                                HITVM.Get().PlaySoundEvent(UISounds.Speed2To3); break;
+                        }
+                        break;
+                    case 10:
+                        switch (speed)
+                        {
+                            case 4:
+                                HITVM.Get().PlaySoundEvent(UISounds.Speed3ToP); break;
+                            case 1:
+                                HITVM.Get().PlaySoundEvent(UISounds.Speed3To1); break;
+                            case 2:
+                                HITVM.Get().PlaySoundEvent(UISounds.Speed3To2); break;
+                        }
+                        break;
+                }
+
+                switch (speed)
+                {
+                    case 4: vm.SpeedMultiplier = GameplaySpeed.ReverseRemap[GameplaySpeed.Pause]; break;
+                    case 1: vm.SpeedMultiplier = GameplaySpeed.ReverseRemap[GameplaySpeed.Play]; break;
+                    case 2: vm.SpeedMultiplier = GameplaySpeed.ReverseRemap[GameplaySpeed.FastForward]; break;
+                    case 3: vm.SpeedMultiplier = GameplaySpeed.ReverseRemap[GameplaySpeed.FastFastForward]; break;
+                }
+                vm.ResetTickAlign();
             }
         }
     }

@@ -42,6 +42,10 @@ namespace Simitone.Client.UI.Panels.CAS
             var ui = Content.Get().CustomUI;
             var sh = UIScreen.Current.ScreenHeight;
             var sw = UIScreen.Current.ScreenWidth;
+
+            //** localization
+            string titleText = GameFacade.Strings.GetString("151", "0"); // Select or Create Family
+
             FamilyList = new UITouchScroll(FamilyLength, FamilyProvider);
             FamilyList.VerticalMode = true;
             FamilyList.Size = new Vector2(810, sh);
@@ -54,7 +58,7 @@ namespace Simitone.Client.UI.Panels.CAS
 
             Title = new UILabel();
             Title.NewStyle(UIStyle.Current.Text, 37);
-            Title.Caption = "Select a Family";
+            Title.Caption = titleText;
             Title.Size = new Vector2(sw, 60);
             Title.Alignment = TextAlignment.Middle | TextAlignment.Center;
             Title.Y = -85;

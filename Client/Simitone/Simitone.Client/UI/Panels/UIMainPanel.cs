@@ -179,9 +179,10 @@ namespace Simitone.Client.UI.Panels
             }
         }
 
-        public void SetMode(UIMainPanelMode mode)
+        public void SetMode(UIMainPanelMode mode, bool force = false)
         {
-            if (mode == Mode) return;
+            if (!force)
+                if (mode == Mode) return;
             Mode = mode;
 
             Game.LotControl.World.State.BuildMode = 0;
@@ -240,6 +241,7 @@ namespace Simitone.Client.UI.Panels
                     panel = new UIButtonSubpanel(Game, new UICatFunc[] {
                         new UICatFunc(GameFacade.Strings.GetString("145", "3"), "opt_save.png", () => { Game.Save(); }),
                         new UICatFunc(GameFacade.Strings.GetString("145", "1"), "opt_neigh.png", () => { Game.ReturnToNeighbourhood(); }),
+                        new UICatFunc("Settings", "opt_setting.png", () => { Game.ShowOptionsDialog(); }),
                         new UICatFunc(GameFacade.Strings.GetString("145", "5"), "opt_quit.png", () => { Game.CloseAttempt(); }),
                     });
                     break;
@@ -283,10 +285,17 @@ namespace Simitone.Client.UI.Panels
         public void SetSubpanelPickup(float opacity)
         {
             //used to hide subpanels to make way for the PickupPanel
-            if (SubPanel != null) GameFacade.Screens.Tween.To(SubPanel, 0.3f, new Dictionary<string, float>() { { "Opacity", opacity } }, TweenQuad.EaseOut);
+            if (SubPanel != null)
+            {
+                GameFacade.Screens.Tween.To(SubPanel, 0.3f, new Dictionary<string, float>() { { "Opacity", opacity } }, TweenQuad.EaseOut);
+                SubPanel.Visible = opacity == 0 ? false : true;
+            }
             GameFacade.Screens.Tween.To(Switcher.MainButton, 0.3f, new Dictionary<string, float>() { { "Opacity", opacity } }, TweenQuad.EaseOut);
             GameFacade.Screens.Tween.To(Game.LotControl.PickupPanel, 0.3f, new Dictionary<string, float>() { { "Opacity", 1-opacity } }, TweenQuad.EaseOut);
-            if (opacity == 0) Switcher.Close();
+            if (opacity == 0)
+            {
+                Switcher.Close();
+            }
         }
 
         private void UpdateWidth()
@@ -356,11 +365,16 @@ namespace Simitone.Client.UI.Panels
 
         }
 
+        private int _currentSimSpeed = -1;
+        private byte? _currentLangCode = null;
+
         public override void Update(UpdateState state)
         {
             base.Update(state);
             Visible = _CurWidth > 0;
 
+            if (!_currentLangCode.HasValue)
+                _currentLangCode = (byte)(GameFacade.Game as SimitoneGame).CurrentLanguage;
             if (!Game.Desktop)
             {
                 if (Game.Level != LastFloor)
@@ -372,15 +386,24 @@ namespace Simitone.Client.UI.Panels
                     FloorUpBtn.Disabled = LastFloor == 5;
                 }
             }
-
+            else
+            { // desktop
+                //language update                
+                if (_currentLangCode != (byte)(GameFacade.Game as SimitoneGame).CurrentLanguage)
+                { // language changed
+                    SetMode(Mode, true); // reload the panel
+                    _currentLangCode = (byte)(GameFacade.Game as SimitoneGame).CurrentLanguage;
+                }
+            }
+            
             Game.LotControl.PickupPanel.Visible = Game.LotControl.PickupPanel.Opacity > 0;
 
             if (Mode != UIMainPanelMode.LIVE)
-            {
-                Game.vm.SpeedMultiplier = -1;
+            { // when in BUILD or BUY, gameplay cannot proceed. Set multiplier to -1 to ensure this cannot be bypassed by changing speed using speed buttons.               
+                Game.LockSimSpeed(); // make it so play cannot continue
             } else if (Game.vm.SpeedMultiplier == -1)
-            {
-                Game.vm.SpeedMultiplier = 0;
+            { // pop prior speed
+                Game.UnlockSimSpeed();
             }
         }
 

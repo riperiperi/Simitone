@@ -9,6 +9,10 @@
     },
     "Simitone IDE": {
       "commandName": "Project",
+      "commandLineArgs": "-ide"
+    },
+    "Simitone IDE 3D": {
+      "commandName": "Project",
       "commandLineArgs": "-ide -3d"
     }
   }

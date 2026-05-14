@@ -80,18 +80,22 @@ namespace Simitone.Client.UI.Panels
             }
         }
 
-        public UIHouseSelectPanel(int houseID)
+        public UIHouseSelectPanel(int houseID, UINeighborhoodSelectionPanel.UINeighborhoodSelectionOptions Options)
         {
             var screen = GameFacade.Screens.CurrentUIScreen;
             var extra = Math.Max(0, (screen.ScreenHeight - 640) / 128) * 64;
+
+            Point controlBoundaries = new Point(screen.ScreenWidth / 2, screen.ScreenHeight);
+            Point margin = new(30);
+
             HouseID = houseID;
 
-            Diag = new UIDiagonalStripe(new Point(screen.ScreenWidth / 2, screen.ScreenHeight + 16), UIDiagonalStripeSide.RIGHT, UIStyle.Current.Bg);
+            Diag = new UIDiagonalStripe(new Point(controlBoundaries.X, screen.ScreenHeight + 16), UIDiagonalStripeSide.RIGHT, UIStyle.Current.Bg);
             Diag.Y = -16;
             Diag.ListenForMouse(Diag.GetBounds(), (e, s) => { });
             Add(Diag);
 
-            TitleStripe = new UIDiagonalStripe(new Point(screen.ScreenWidth / 2, 92 + 8 + 32), UIDiagonalStripeSide.RIGHT, UIStyle.Current.Bg);
+            TitleStripe = new UIDiagonalStripe(new Point(controlBoundaries.X, 92 + 8 + 32), UIDiagonalStripeSide.RIGHT, UIStyle.Current.Bg);
             TitleStripe.StartOff = 8 + 32;
             TitleStripe.Y = -16 + extra;
             Add(TitleStripe);
@@ -118,25 +122,26 @@ namespace Simitone.Client.UI.Panels
             if (name == "") name = StreetTitle.Caption;
 
             LotTitle = new UILabel();
-            LotTitle.Position = new Vector2(30, 122 + extra - 64);
+            LotTitle.Position = new Vector2(margin.X, 122 + extra - 64);
             InitLabel(LotTitle);
-            LotTitle.CaptionStyle.Size = 37;
+            LotTitle.CaptionStyle.Size = 37; // desired size            
             LotTitle.Caption = name;
+            LotTitle.FitAvailableSpace(controlBoundaries, new(margin.X, 0));
 
             var family = neigh.GetFamilyForHouse((short)houseID);
 
             LotDescription = new UILabel();
-            LotDescription.Position = new Vector2(30, 206 + extra);
+            LotDescription.Position = new Vector2(margin.X, 206 + extra);
             InitLabel(LotDescription);
             //LotDescription.CaptionStyle.Size = 15;
-            LotDescription.Size = new Vector2(screen.ScreenWidth/2 - 60, screen.ScreenHeight - 415);
+            LotDescription.Size = new Vector2(controlBoundaries.X - (margin.X * 2), screen.ScreenHeight - 415);
             LotDescription.Wrapped = true;
             LotDescription.Alignment = TextAlignment.Top | TextAlignment.Left;
 
             SecondaryText = new UILabel();
-            SecondaryText.Position = new Vector2(30, screen.ScreenHeight - (165 + extra));
+            SecondaryText.Position = new Vector2(margin.X, screen.ScreenHeight - (165 + extra));
             InitLabel(SecondaryText);
-            SecondaryText.Size = new Vector2(screen.ScreenWidth / 2 - 60, 29);
+            SecondaryText.Size = new Vector2(controlBoundaries.X - (margin.X * 2), margin.Y);
             SecondaryText.Wrapped = true;
             SecondaryText.Alignment = TextAlignment.Bottom | TextAlignment.Right;
             SecondaryText.CaptionStyle.Color = UIStyle.Current.SecondaryText;
@@ -299,20 +304,28 @@ namespace Simitone.Client.UI.Panels
                 }
             }
 
-            EnterLot = new UIBigButton(false);
-            EnterLot.Caption = (moveIn == null)?"Enter Lot":"Move In";
-            EnterLot.Width = (moveIn == null)? (screen.ScreenWidth / 2 - 293) : (screen.ScreenWidth/2-60);
-            EnterLot.Disabled = !buttonValid;
-            EnterLot.Position = new Vector2(30, screen.ScreenHeight - (extra + 125));
+            bool showMoreOptionsButton = Options.MoreButtonEnabled && moveIn == null;
+
+            Point MoreButtonSize = new(208,0);
+            Point buttonMargin = new(10, 0);
+            int dockpanelSpace = controlBoundaries.X - ((margin.X * 2) + (showMoreOptionsButton ? MoreButtonSize.X : 0) + (buttonMargin.X * 2));
+
+            EnterLot = new UIBigButton(false)
+            {
+                Caption = (moveIn == null) ? Options.PrimaryButtonText : "Move In",
+                Width = dockpanelSpace,// (moveIn == null)? (screen.ScreenWidth / 2 - 293) : (screen.ScreenWidth/2-60);
+                Disabled = !buttonValid,
+                Position = new Vector2(30, screen.ScreenHeight - (extra + 125)),                
+            };            
             EnterLot.OnButtonClick += (b) => { OnSelected?.Invoke(houseID); Kill(); };
             Add(EnterLot);
 
             More = new UIBigButton(true);
             More.Caption = "More";
-            More.Width = 208;
+            More.Width = MoreButtonSize.X;
             More.Position = new Vector2(screen.ScreenWidth / 2 - 238, screen.ScreenHeight - (extra + 125));
             More.OnButtonClick += (btn) => { ShowMore(true); };
-            if (moveIn == null) Add(More);
+            if (showMoreOptionsButton) Add(More);
 
             var optionFunctions = new ButtonClickDelegate[]
             {

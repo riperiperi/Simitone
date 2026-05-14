@@ -171,8 +171,9 @@ namespace Simitone.Client.UI.Panels
             CTSS catString = obj.Resource.Get<CTSS>(def.CatalogStringsID);
             if (catString != null)
             {
-                Body.Caption = catString.GetString(1);
-                Title.Caption = catString.GetString(0);
+                var game = GameFacade.Game as SimitoneGame;
+                Body.Caption = catString.GetString(1, game.CurrentLanguage);
+                Title.Caption = catString.GetString(0, game.CurrentLanguage);
             }
             else
             {

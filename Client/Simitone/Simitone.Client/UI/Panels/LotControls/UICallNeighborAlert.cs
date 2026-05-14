@@ -31,9 +31,17 @@ namespace Simitone.Client.UI.Panels.LotControls
             Caption = "Call Neighbour";
             SetHeight(490);
             NPanel = new UICallNeighborPanel(callerNID, vm);
-            NPanel.Position = new Microsoft.Xna.Framework.Vector2((Width - 1030) / 2, 110);
+            UpdatePlacement();
             NPanel.OnResult += (res) => { OnResult?.Invoke(res); Close(); };
             Add(NPanel);
+        }
+
+        void UpdatePlacement() => NPanel.Position = new Microsoft.Xna.Framework.Vector2((Width - 1030) / 2, 110);
+
+        public override void GameResized()
+        {
+            base.GameResized();
+            UpdatePlacement();
         }
     }
 
@@ -43,7 +51,7 @@ namespace Simitone.Client.UI.Panels.LotControls
         public UITouchStringList FamilyList;
         public UITouchStringList NeighbourList;
         public UIAvatarSelectButton Icon;
-        public UIBigButton CallButton;
+        public UIBigButton CallButton, CancelButton;
         public int SelectedFamily = -1;
         public short SelectedNeighbour = -1;
         public VM VM;
@@ -84,26 +92,25 @@ namespace Simitone.Client.UI.Panels.LotControls
             Add(FamilyList);
 
             NeighbourList = new UITouchStringList();
-            NeighbourList.Size = new Microsoft.Xna.Framework.Vector2(320, 350);
-            NeighbourList.Position = new Microsoft.Xna.Framework.Vector2(370, 0);
+            NeighbourList.Size = new Microsoft.Xna.Framework.Vector2(320, 350);            
             NeighbourList.OnSelectionChange += NeighbourList_OnSelectionChange;
             Add(NeighbourList);
 
-            var cancelButton = new UIBigButton(false);
-            cancelButton.Caption = "Cancel";
-            cancelButton.Position = new Microsoft.Xna.Framework.Vector2(370 + 385, 135);
+            var cancelButton = CancelButton = new UIBigButton(false);
+            cancelButton.Caption = "Cancel";           
             cancelButton.OnButtonClick += (btn) => { OnResult?.Invoke(-1); };
             cancelButton.Width = 275;
             Add(cancelButton);
 
             CallButton = new UIBigButton(true);
-            CallButton.Caption = "Call";
-            CallButton.Position = new Microsoft.Xna.Framework.Vector2(370 + 385, 255);
+            CallButton.Caption = "Call";            
             CallButton.OnButtonClick += (btn) => { OnResult?.Invoke(SelectedNeighbour); };
             CallButton.Width = 275;
             Add(CallButton);
 
-            NeighbourList_OnSelectionChange((NeighborsByFamilyID.Count==0)?-2:-1);
+            PlaceControls();
+
+            NeighbourList_OnSelectionChange((NeighborsByFamilyID.Count == 0) ? -2 : -1);
 
             OnResult += (res) => { CallButton.Disabled = true; cancelButton.Disabled = true; };
         }
@@ -111,22 +118,27 @@ namespace Simitone.Client.UI.Panels.LotControls
         private void NeighbourList_OnSelectionChange(int obj)
         {
             if (Icon != null) { Remove(Icon); Icon = null; }
-            if (obj == -1)
+            if (obj < 0)
             {
                 SelectedNeighbour = -1;
                 CallButton.Disabled = true;
-            } else
-            {
-                SelectedNeighbour = NeighborsByFamilyID.ElementAt(SelectedFamily).Value[obj];
-                CallButton.Disabled = false;
+                if (obj == -2)
+                {
 
-                var guid = Content.Get().Neighborhood.GetNeighborByID(SelectedNeighbour).GUID;
-                var temp = VM.Context.CreateObjectInstance(guid, LotTilePos.OUT_OF_WORLD, Direction.NORTH, true);
-                Icon = new UIAvatarSelectButton(UIIconCache.GetObject(temp.BaseObject));
-                Icon.Position = new Microsoft.Xna.Framework.Vector2(892, 60);
-                Add(Icon);
-                temp.Delete(VM.Context);
+                }
+                return;
             }
+
+            //show selections
+            SelectedNeighbour = NeighborsByFamilyID.ElementAt(SelectedFamily).Value[obj];
+            CallButton.Disabled = false;
+
+            var guid = Content.Get().Neighborhood.GetNeighborByID(SelectedNeighbour).GUID;
+            var temp = VM.Context.CreateObjectInstance(guid, LotTilePos.OUT_OF_WORLD, Direction.NORTH, true);
+            Icon = new UIAvatarSelectButton(UIIconCache.GetObject(temp.BaseObject));
+            Icon.Position = new Microsoft.Xna.Framework.Vector2(892, 60);
+            Add(Icon);
+            temp.Delete(VM.Context);
         }
 
         private void FamilyList_OnSelectionChange(int obj)
@@ -149,6 +161,19 @@ namespace Simitone.Client.UI.Panels.LotControls
             NeighbourList.Refresh();
             NeighbourList_OnSelectionChange(-1);
             SelectedFamily = obj;
+        }
+
+        void PlaceControls()
+        {
+            CallButton.Position = new Microsoft.Xna.Framework.Vector2(370 + 385, 255);
+            CancelButton.Position = new Microsoft.Xna.Framework.Vector2(370 + 385, 135);
+            NeighbourList.Position = new Microsoft.Xna.Framework.Vector2(370, 0);
+        }
+
+        public override void GameResized()
+        {
+            base.GameResized();
+            PlaceControls();
         }
     }
 }

@@ -1,31 +1,31 @@
-﻿using FSO.Client.UI.Controls;
+﻿using FSO.Client;
+using FSO.Client.UI.Controls;
 using FSO.Client.UI.Framework;
 using FSO.Common.Rendering.Framework.IO;
+using FSO.Common.Rendering.Framework.Model;
+using FSO.Content;
 using FSO.Content.Framework;
 using FSO.Content.Model;
 using FSO.Files.Formats.IFF.Chunks;
+using FSO.HIT;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FSO.Common.Rendering.Framework.Model;
-using FSO.HIT;
-using FSO.Client;
-using FSO.Content;
-using FSO.Common.Utils;
-using Simitone.Client.UI.Controls;
-using Simitone.Client.Utils;
-using FSO.Common;
-using System.IO;
-using FSO.Files.RC;
 
 namespace Simitone.Client.UI.Panels
-{
+{    
     public class UINeighborhoodSelectionPanel : UIContainer
     {
+        public class UINeighborhoodSelectionOptions
+        {
+            public static UINeighborhoodSelectionOptions Default = new UINeighborhoodSelectionOptions();
+
+            public List<short> LotZoneExclusionFilter { get; } = new();
+            public string PrimaryButtonText { get; set; } = "Enter House";
+            public bool MoreButtonEnabled { get; set; } = true;
+        }
 
         public static NeighborhoodViewConfig[] Neighborhoods = new NeighborhoodViewConfig[]
         {
@@ -80,6 +80,24 @@ namespace Simitone.Client.UI.Panels
             },
         };
 
+        /// <summary>
+        /// The last house the user clicked on, bringing up the house selection menu
+        /// <para/><see langword="null"/> if there is no currently selected house
+        /// </summary>
+        private int? _selectedHouse;
+        private enum NeighCameraModes
+        {
+            /// <summary>
+            /// Zoomed out to see neighborhood
+            /// </summary>
+            FullScr,
+            /// <summary>
+            /// Camera is focused on a house the user selected
+            /// </summary>
+            HouseFocus
+        }
+        private NeighCameraModes _selectedCameraMode;
+
         public TS1Provider Provider;
         public event Action<int> OnHouseSelect;
         public HITSound BgSound;
@@ -124,11 +142,15 @@ namespace Simitone.Client.UI.Panels
             }
         }
 
-        public UINeighborhoodSelectionPanel(ushort mode)
+        public UINeighborhoodSelectionPanel(ushort mode, UINeighborhoodSelectionOptions? Options = default)
         {
+            if (Options == null)
+                Options = UINeighborhoodSelectionOptions.Default;
+            options = Options;
+
             Provider = Content.Get().TS1Global;
             PopulateScreen(mode);
-            GameResized();
+            GameResized();            
         }
 
         public void UpdatePosition()
@@ -138,12 +160,21 @@ namespace Simitone.Client.UI.Panels
             ScaleX = ScaleY = scale * Zoom;
 
             X = (GlobalSettings.Default.GraphicsWidth) / 2 - _cp.X * ScaleX;
-            Y = (GlobalSettings.Default.GraphicsHeight) / 2 - _cp.Y * ScaleY;
+            Y = (GlobalSettings.Default.GraphicsHeight) / 2 - _cp.Y * ScaleY;            
         }
 
         public override void GameResized()
         {
             UpdatePosition();
+
+            //** when user resizes the window boundaries, the camera and HouseSelectPanel needs to be reset to account for the new space
+            if (_selectedCameraMode == NeighCameraModes.HouseFocus) // house focus requires repositioning the camera
+            {
+                if (!_selectedHouse.HasValue) // somehow a house got unselected -- reset to zoom out
+                    ResetZoom();
+                else // house is selected, recenter on the house and remake the houseselectpanel to account for the new scr width & height
+                    SetCameraMode();
+            }
         }
 
         private Texture2D texture;
@@ -181,9 +212,17 @@ namespace Simitone.Client.UI.Panels
                 var num = int.Parse(loc[0].TrimStart());
                 if (num == 99) continue;
                 var button = new UINeighborhoodHouseButton(num, SelectHouse, config.Scale);
-                button.Position = new Vector2(int.Parse(loc[1].TrimStart()), int.Parse(loc[2].TrimStart()));
+                button.Position = new Vector2(int.Parse(loc[1].TrimStart()), int.Parse(loc[2].TrimStart()));                
                 HousePositions[num] = button.Position;
                 buttons.Add(button);
+
+                //**check lot zoning
+                if (Content.Get().Neighborhood.ZoningDictionary.TryGetValue((short)num, out var result))
+                {
+                    //this is excluded in our options -- disable the button
+                    if (options.LotZoneExclusionFilter.Contains(result)) 
+                        button.Enabled = false;
+                }
             }
 
             var ordered = buttons.OrderBy(x => x.Y);
@@ -204,43 +243,96 @@ namespace Simitone.Client.UI.Panels
                 BgSound.AddOwner(-25);
             }
             Mode = mode;
-            Zoom = Zoom;
+
             CenterPositionX = CenterPositionX;
             CenterPositionY = CenterPositionY;
             //SimitoneNeighOBJExporter.SaveOBJ(Path.Combine(FSOEnvironment.UserDir, "NeighModel" + mode + "/"), locations);
+
+            //when transitioning, this is too much motion if this tweens with the transition -- make sure it immediately is gone
+            if (LastHS != null)
+                LastHS.Visible = false; 
+            ResetZoom();
         }
 
         public void ResetZoom()
         {
+            _selectedHouse = null;
             if (LastHS == null) return;
             LastHS.Kill();
             LastHS = null;
-            GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "Zoom", 1f }, { "CenterPositionX", 400 }, { "CenterPositionY", 300 } }, TweenQuad.EaseOut);
+            SetCameraMode(NeighCameraModes.FullScr);
         }
 
         public UIHouseSelectPanel LastHS;
+        private readonly UINeighborhoodSelectionOptions options;
 
         public void SelectHouse(int house)
         {
             if (LastHS != null && LastHS.HouseID == house)
-            {
-                ResetZoom();
+            { // reset zoom will clear the LastHS UIControl and also the _selectedHouse field
+                ResetZoom();                
             }
             else
+            { // create a LastHS UIControl and set the _selectedHouse field                
+                _selectedHouse = house; // set the currently selected house
+                SetCameraMode(NeighCameraModes.HouseFocus);                              
+            }
+        }
+
+        /// <summary>
+        /// Opens a new <see cref="UIHouseSelectPanel"/> for the given <paramref name="house"/>
+        /// </summary>
+        /// <param name="house"></param>
+        private void OpenHouseSelectPanel(int house)
+        {
+            //if panel is already open, destroy it
+            LastHS?.Kill();
+            LastHS = new UIHouseSelectPanel(house, options);
+
+            LastHS.OnSelected += (h) =>
             {
-                LastHS?.Kill();
-                LastHS = new UIHouseSelectPanel(house);
-                GameFacade.Screens.CurrentUIScreen.Add(LastHS);
-                GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() {
+                OnHouseSelect?.Invoke(h);
+                //HITVM.Get().PlaySoundEvent("bkground_fade");
+            };
+            GameFacade.Screens.CurrentUIScreen.Add(LastHS);
+        }
+
+        /// <summary>
+        /// Sets the camera settings for the selected <paramref name="NewMode"/> and updates the <see cref="_selectedCameraMode"/> property
+        /// </summary>
+        /// <param name="NewMode"></param>
+        private void SetCameraMode(NeighCameraModes? NewMode = default)
+        {
+            NeighCameraModes oldMode = _selectedCameraMode;
+            if (NewMode.HasValue)
+                _selectedCameraMode = NewMode.Value;            
+
+            switch (_selectedCameraMode)
+            {
+                case NeighCameraModes.HouseFocus:
+
+                    //handle if no selection is made when camera transitioning
+                    if (_selectedHouse == null || _selectedHouse < 0)
+                    {
+                        ResetZoom();
+                        return;
+                    }
+
+                    int house = _selectedHouse.Value;
+
+                    //**spawn (or respawn) the HouseSelectPanel
+                    OpenHouseSelectPanel(house);
+
+                    GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() {
                     { "Zoom", (Mode==4)?3f:1.5f },
                     { "CenterPositionX", HousePositions[house].X - ((Mode==4)?90f:180f) },
                     { "CenterPositionY", HousePositions[house].Y } }, TweenQuad.EaseOut);
+                    break;
 
-                LastHS.OnSelected += (h) =>
-                {
-                    OnHouseSelect?.Invoke(h);
-                    //HITVM.Get().PlaySoundEvent("bkground_fade");
-                };
+                case NeighCameraModes.FullScr:
+                default:
+                    GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "Zoom", 1f }, { "CenterPositionX", 400 }, { "CenterPositionY", 300 } }, TweenQuad.EaseOut);
+                    break;
             }
         }
 
@@ -340,6 +432,8 @@ namespace Simitone.Client.UI.Panels
         private THMB Offsets;
         public float AlphaTime { get; set; }
 
+        public bool Enabled { get; set; } = true;
+
         public UINeighborhoodHouseButton(int houseNumber, Action<int> selectionCallback, float scale)
         {
             if (houseNumber == 71) { }
@@ -363,12 +457,14 @@ namespace Simitone.Client.UI.Panels
             var clickHandler =
                 ListenForMouse(new Rectangle(w / -2, w / -4, w, h/2), (evt, state) =>
                 {
+                    if (!Enabled) return;
                     switch (evt)
                     {
                         case UIMouseEventType.MouseUp:
                             HITVM.Get().PlaySoundEvent(FSO.Client.UI.Model.UISounds.NeighborhoodClick);
                             selectionCallback(houseNumber); break;
                         case UIMouseEventType.MouseOver:
+                            
                             GameFacade.Screens.Tween.To(this, 0.5f, new Dictionary<string, float>() { { "AlphaTime", 1f } });
                             HITVM.Get().PlaySoundEvent(FSO.Client.UI.Model.UISounds.NeighborhoodRollover);
                             Hovered = true; break;

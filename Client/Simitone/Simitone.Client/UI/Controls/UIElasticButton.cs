@@ -12,7 +12,39 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Simitone.Client.UI.Controls
 {
-    public class UIElasticButton : UIButton
+    public interface IUIShadowElement
+    {
+        UIShadow ElementShadow { get; }
+    }
+
+    public class UIShadow
+    {
+        public UIShadow(Texture2D shadowTexture, float shadowOpacity = .5f, Color? shadowColor = default, float shadowDepth = 2f, Vector2? shadowDirection = default, Vector2? shadowSize = default)
+        {
+            ShadowTexture = shadowTexture;
+            ShadowOpacity = shadowOpacity;
+            ShadowColor = shadowColor ?? Color.Black;
+            ShadowDepth = shadowDepth;
+            ShadowDirection = shadowDirection ?? new Vector2(1,1);
+            ShadowDirection.Normalize();
+            ShadowSize = shadowSize ?? new(shadowTexture.Width,shadowTexture.Height);
+        }
+
+        public Texture2D ShadowTexture { get; set; }
+        public float ShadowOpacity { get; set; }
+        public Color ShadowColor { get; set; }
+        public float ShadowDepth { get; set; }
+        public Vector2 ShadowDirection { get; set; }
+        public Vector2 ShadowSize { get; set; }
+
+        public void Draw(UIElement VisualParent, Vector2 Origin, SpriteBatch Batch)
+        {
+            if (ShadowTexture == null) return;
+            VisualParent.DrawLocalTexture(Batch, ShadowTexture, Origin + (ShadowDirection * ShadowDepth));
+        }
+    }
+
+    public class UIElasticButton : UIButton, IUIShadowElement
     {
         public UIElasticButton(Texture2D tex) : base (tex)
         {
@@ -29,6 +61,9 @@ namespace Simitone.Client.UI.Controls
 
         private int LastState;
         private int DownTime = 5;
+
+        public UIShadow ElementShadow { get; set; }
+
         public override void Update(UpdateState state)
         {
             base.Update(state);
@@ -69,6 +104,8 @@ namespace Simitone.Client.UI.Controls
         public override void Draw(UISpriteBatch SBatch)
         {
             if (!Visible) return;
+            if (ElementShadow != null)
+                ElementShadow.Draw(this, new Vector2(Texture.Width, Texture.Height) / -2, SBatch);
             DrawLocalTexture(SBatch, Texture, null, new Vector2(Texture.Width, Texture.Height) / -2, Vector2.One, Color.White * (Disabled?0.5f:1f));
         }
     }
